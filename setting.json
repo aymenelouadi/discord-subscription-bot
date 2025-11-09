@@ -1,0 +1,126 @@
+{
+    "commands": {
+        "subscribe": {
+            "enable": true,
+            "name": "subscribe",
+            "description": "Subscribe to monthly role",
+            "options": "admin",
+            "type": [],
+            "plan": []
+        },
+        "unsubscribe": {
+            "enable": true,
+            "name": "unsubscribe",
+            "description": "Cancel subscription",
+            "options": "admin"
+        },
+        "subscriptions": {
+            "enable": true,
+            "name": "subscriptions",
+            "description": "View all subscriptions",
+            "options": "admin"
+        },
+        "info": {
+            "enable": true,
+            "name": "info",
+            "description": "View subscription info",
+            "options": "public"
+        },
+        "help": {
+            "enable": true,
+            "name": "help",
+            "description": "View all available commands",
+            "options": "public"
+        },
+        "chart": {
+            "enable": true,
+            "name": "chart",
+            "description": "Access chart features",
+            "options": "admin"
+        },
+        "announce": {
+            "enable": true,
+            "name": "announce",
+            "description": "Send annonce for all subscriptions",
+            "options": "admin"
+        },
+        "check": {
+            "enable": true,
+            "name": "check",
+            "description": "Check all subscriptions",
+            "options": "admin"
+        },
+        "clearexpired": {
+            "enable": true,
+            "name": "clearexpired",
+            "description": "Delete expired subscriptions completely",
+            "options": "admin"
+        },
+        "remind": {
+            "enable": true,
+            "name": "remind",
+            "description": "Set up personalized reminders for any member before their subscription expires",
+            "options": "admin"
+        },
+        "renew": {
+            "enable": true,
+            "name": "renew",
+            "description": "Renewing subscriptions",
+            "options": "admin"
+        },
+        "setlog": {
+            "enable": true,
+            "name": "setlog",
+            "description": "Define log channels",
+            "options": "admin"
+        },
+        "stats": {
+            "enable": true,
+            "name": "stats",
+            "description": "View full database statistics",
+            "options": "admin"
+        },
+        "enable": {
+            "enable": true,
+            "name": "enable",
+            "description": "Enable or disable commands",
+            "options": "admin"
+        },
+        "owner_add": {
+            "enable": true,
+            "name": "owner_add",
+            "description": "Add a user to owners list",
+            "options": "admin"
+        },
+        "owner_remove": {
+            "enable": true,
+            "name": "owner_remove",
+            "description": "Remove a user from owners list",
+            "options": "admin"
+        },
+        "plan_add": {
+            "enable": true,
+            "name": "plan_add",
+            "description": "Add new plan",
+            "options": "admin"
+        },
+        "plan_remove": {
+            "enable": true,
+            "name": "plan_remove",
+            "description": "Remove plan",
+            "options": "admin"
+        },
+        "type_add": {
+            "enable": true,
+            "name": "type_add",
+            "description": "Add type",
+            "options": "admin"
+        },
+        "type_remove": {
+            "enable": true,
+            "name": "type_remove",
+            "description": "Remove Type",
+            "options": "admin"
+        }
+    }
+}
