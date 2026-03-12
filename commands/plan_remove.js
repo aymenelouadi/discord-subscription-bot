@@ -1,7 +1,7 @@
 // commands/plan_remove.js
 // Code Nexus => https://discord.gg/wBTyCap8
 
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,7 +11,7 @@ try {
     const configFile = fs.readFileSync(configPath, 'utf8');
     config = JSON.parse(configFile);
 } catch (error) {
-    console.error('❌ Failed to load config.json:', error.message);
+    console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
     config = {
         OWNER: []
     };
@@ -23,7 +23,7 @@ const loadFreshSettings = () => {
         const settingsFile = fs.readFileSync(settingsPath, 'utf8');
         return JSON.parse(settingsFile);
     } catch (error) {
-        console.error('❌ Failed to load setting.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
         return { commands: {} };
     }
 };
@@ -43,8 +43,12 @@ module.exports = {
     async execute(client, interaction) {
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
-                content: '❌ You do not have permission to use this command.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} You do not have permission to use this command.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -53,23 +57,28 @@ module.exports = {
 
             const settings = loadFreshSettings();
             const planToRemove = interaction.options.getString('plan').trim();
-            
+
             if (!settings.commands.subscribe) {
                 return await interaction.editReply({
-                    content: '❌ Subscribe command not found in settings.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Subscribe command not found in settings.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (!Array.isArray(settings.commands.subscribe.plan) || settings.commands.subscribe.plan.length === 0) {
                 return await interaction.editReply({
-                    content: '❌ No plans available to remove.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} No plans available to remove.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
-
-            console.log('Current plans:', settings.commands.subscribe.plan);
-            console.log('Looking for plan:', planToRemove);
 
             const foundPlan = settings.commands.subscribe.plan.find(
                 plan => plan.toLowerCase() === planToRemove.toLowerCase()
@@ -77,133 +86,118 @@ module.exports = {
 
             if (!foundPlan) {
                 return await interaction.editReply({
-                    content: `❌ Plan **${planToRemove}** not found. Available plans: ${settings.commands.subscribe.plan.join(', ')}`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `${settings?.emojie?.error ?? "❌"} Plan \`${planToRemove}\` not found.\n\n**Available plans**\n${settings.commands.subscribe.plan.map(p => `> \`${p}\``).join('\n')}`
+                            ))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (settings.commands.subscribe.plan.length <= 1) {
                 return await interaction.editReply({
-                    content: '❌ Cannot remove the last plan. At least one plan must remain.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Cannot remove the last plan. At least one plan must remain.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
-            const confirmEmbed = new EmbedBuilder()
-                .setColor(0xFFA500)
-                .setTitle('⚠️ Confirm Removal')
-                .setDescription('Are you sure you want to remove this plan?')
-                .addFields(
-                    {
-                        name: '📊 Plan to Remove',
-                        value: foundPlan,
-                        inline: true
-                    },
-                    {
-                        name: '📈 Remaining Plans',
-                        value: `${settings.commands.subscribe.plan.length - 1} plans`,
-                        inline: true
-                    },
-                    {
-                        name: '🔧 Current Plans',
-                        value: settings.commands.subscribe.plan.join(', '),
-                        inline: false
-                    }
-                )
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'This action cannot be undone' 
-                });
+            const confirmContainer = new ContainerBuilder()
+                .setAccentColor(0xF0B232)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.plan_remove} Confirm Removal`))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**Plan to Remove** Â· \`${foundPlan}\`\n` +
+                    `**Remaining Plans** Â· ${settings.commands.subscribe.plan.length - 1} plans\n\n` +
+                    `**Current Plans**\n${settings.commands.subscribe.plan.map(p => `> \`${p}\``).join('\n')}`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.warning} This action cannot be undone`));
 
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('confirm_remove')
-                        .setLabel('✅ Confirm Remove')
+                        .setLabel('Confirm Remove')
                         .setStyle(ButtonStyle.Danger),
                     new ButtonBuilder()
                         .setCustomId('cancel_remove')
-                        .setLabel('❌ Cancel')
+                        .setLabel('Cancel')
                         .setStyle(ButtonStyle.Secondary)
                 );
 
             const message = await interaction.editReply({
-                embeds: [confirmEmbed],
-                components: [row],
-                ephemeral: false
+                components: [confirmContainer, row],
+                flags: MessageFlags.IsComponentsV2
             });
 
             const collector = message.createMessageComponentCollector({
                 filter: (i) => i.user.id === interaction.user.id,
-                time: 30000 // 30 seconds
+                time: 30000
             });
 
             collector.on('collect', async (i) => {
                 try {
                     if (i.customId === 'confirm_remove') {
                         const currentSettings = loadFreshSettings();
-                        
+
                         currentSettings.commands.subscribe.plan = currentSettings.commands.subscribe.plan.filter(
                             plan => plan !== foundPlan
                         );
 
                         try {
-                            const settingsPath = path.join(__dirname, '..', 'setting.json');
-                            fs.writeFileSync(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
-                            
-                            console.log(`✅ Plan removed: ${foundPlan} by ${interaction.user.tag}`);
+                            const settingsPath = require('path').join(__dirname, '..', 'setting.json');
+                            require('fs').writeFileSync(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                            console.log(`${settings.emojie.success} Plan removed: ${foundPlan} by ${interaction.user.tag}`);
                         } catch (error) {
-                            console.error('❌ Failed to save settings:', error);
+                            console.error(`${settings?.emojie?.error ?? "❌"} Failed to save settings:`, error);
                             await i.update({
-                                content: '❌ Failed to save settings to file.',
-                                components: [],
-                                embeds: []
+                                components: [
+                                    new ContainerBuilder()
+                                        .setAccentColor(0xF23F43)
+                                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Failed to save settings to file.`))
+                                ],
+                                flags: MessageFlags.IsComponentsV2
                             });
                             return;
                         }
 
-                        const successEmbed = new EmbedBuilder()
-                            .setColor(0x00FF00)
-                            .setTitle('✅ Plan Removed')
-                            .setDescription('Successfully removed plan from subscribe command')
-                            .addFields(
-                                {
-                                    name: '📊 Removed Plan',
-                                    value: foundPlan,
-                                    inline: true
-                                },
-                                {
-                                    name: '👮‍♂️ Removed By',
-                                    value: `<@${interaction.user.id}>`,
-                                    inline: true
-                                },
-                                {
-                                    name: '📈 Remaining Plans',
-                                    value: `${currentSettings.commands.subscribe.plan.length}/25`,
-                                    inline: true
-                                },
-                                {
-                                    name: '🔧 Available Plans',
-                                    value: currentSettings.commands.subscribe.plan.join(', ') || 'None',
-                                    inline: false
-                                }
-                            )
-                            .setTimestamp();
+                        const successContainer = new ContainerBuilder()
+                            .setAccentColor(0x23C55E)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.plan_remove} Plan Removed`))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `**Removed Plan** Â· \`${foundPlan}\`\n` +
+                                `**Removed By** Â· <@${interaction.user.id}>\n` +
+                                `**Remaining** Â· ${currentSettings.commands.subscribe.plan.length}/25\n\n` +
+                                `**Available Plans**\n${currentSettings.commands.subscribe.plan.length > 0 ? currentSettings.commands.subscribe.plan.map(p => `> \`${p}\``).join('\n') : '> None'}`
+                            ))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.chart} Plans Management Â· Changes take effect immediately`));
 
                         await i.update({
-                            embeds: [successEmbed],
-                            components: []
+                            components: [successContainer],
+                            flags: MessageFlags.IsComponentsV2
                         });
 
                     } else if (i.customId === 'cancel_remove') {
                         await i.update({
-                            content: '❌ Removal cancelled.',
-                            components: [],
-                            embeds: []
+                            components: [
+                                new ContainerBuilder()
+                                    .setAccentColor(0x5865F2)
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Removal cancelled.`))
+                            ],
+                            flags: MessageFlags.IsComponentsV2
                         });
                     }
                 } catch (error) {
-                    console.error('❌ Error handling confirmation:', error);
+                    console.error(`${settings?.emojie?.error ?? "❌"} Error handling confirmation:`, error);
                 }
             });
 
@@ -211,22 +205,29 @@ module.exports = {
                 if (collected.size === 0) {
                     try {
                         await message.edit({
-                            content: '⏰ Removal request timed out.',
-                            components: [],
-                            embeds: []
+                            components: [
+                                new ContainerBuilder()
+                                    .setAccentColor(0xF0B232)
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings.emojie.clock} Removal request timed out.`))
+                            ],
+                            flags: MessageFlags.IsComponentsV2
                         });
                     } catch (error) {
-                        console.error('❌ Error updating timed out message:', error);
+                        console.error(`${settings?.emojie?.error ?? "❌"} Error updating timed out message:`, error);
                     }
                 }
             });
 
         } catch (error) {
-            console.error('❌ Error executing plan_remove command:', error);
-            
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing plan_remove command:`, error);
+
             await interaction.editReply({
-                content: '❌ An error occurred while removing plan.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} An error occurred while removing plan.`))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }

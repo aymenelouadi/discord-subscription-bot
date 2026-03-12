@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Sensitive configuration — never commit these
+config.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Temporary scripts used during development
+upload_emojis.js
+upload_emojis_retry.js
+upload_utils.js
+patch_emojis.js

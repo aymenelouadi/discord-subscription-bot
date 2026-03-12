@@ -1,7 +1,7 @@
 // commands/type_add.js
 // Code Nexus => https://discord.gg/wBTyCap8
 
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,7 +12,7 @@ const loadSettings = () => {
         const settingsFile = fs.readFileSync(settingsPath, 'utf8');
         settings = JSON.parse(settingsFile);
     } catch (error) {
-        console.error('❌ Failed to load setting.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
         settings = {
             commands: {}
         };
@@ -27,7 +27,7 @@ const loadConfig = () => {
         const configFile = fs.readFileSync(configPath, 'utf8');
         config = JSON.parse(configFile);
     } catch (error) {
-        console.error('❌ Failed to load config.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
         config = {
             OWNER: []
         };
@@ -41,7 +41,7 @@ const saveSettings = (newSettings) => {
         fs.writeFileSync(settingsPath, JSON.stringify(newSettings, null, 4), 'utf8');
         return true;
     } catch (error) {
-        console.error('❌ Failed to save settings:', error);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to save settings:`, error);
         return false;
     }
 };
@@ -62,8 +62,12 @@ module.exports = {
 
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
-                content: '❌ You do not have permission to use this command.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} You do not have permission to use this command.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -75,8 +79,12 @@ module.exports = {
 
             if (!currentSettings.commands.subscribe) {
                 return await interaction.editReply({
-                    content: '❌ Subscribe command not found in settings.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Subscribe command not found in settings.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
@@ -86,15 +94,23 @@ module.exports = {
 
             if (currentSettings.commands.subscribe.type.includes(newType)) {
                 return await interaction.editReply({
-                    content: `❌ Service type **${newType}** already exists.`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Service type **${newType}** already exists.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (currentSettings.commands.subscribe.type.length >= 25) {
                 return await interaction.editReply({
-                    content: '❌ Maximum limit of 25 service types reached. Please remove some types first.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Maximum limit of 25 service types reached. Please remove some types first.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
@@ -110,58 +126,50 @@ module.exports = {
             };
 
             const saveSuccess = saveSettings(updatedSettings);
-            
+
             if (!saveSuccess) {
                 return await interaction.editReply({
-                    content: '❌ Failed to save settings to file.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Failed to save settings to file.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
-            console.log(`✅ Service type added: ${newType} by ${interaction.user.tag}`);
+            console.log(`${settings.emojie.success} Service type added: ${newType} by ${interaction.user.tag}`);
 
-            const embed = new EmbedBuilder()
-                .setColor(0x00FF00)
-                .setTitle('✅ Service Type Added')
-                .setDescription('Successfully added new service type to subscribe command')
-                .addFields(
-                    {
-                        name: '📋 New Type',
-                        value: newType,
-                        inline: true
-                    },
-                    {
-                        name: '👮‍♂️ Added By',
-                        value: `<@${interaction.user.id}>`,
-                        inline: true
-                    },
-                    {
-                        name: '📊 Total Types',
-                        value: `${updatedSettings.commands.subscribe.type.length}/25`,
-                        inline: true
-                    },
-                    {
-                        name: '🔧 Available Types',
-                        value: updatedSettings.commands.subscribe.type.join(', ') || 'None',
-                        inline: false
-                    }
-                )
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'Service Types Management • Changes take effect immediately' 
-                });
+            const allTypes = updatedSettings.commands.subscribe.type;
+            const container = new ContainerBuilder()
+                .setAccentColor(0x23C55E)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.type_add} Service Type Added`))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**New Type** Â· \`${newType}\`\n` +
+                    `**Added By** Â· <@${interaction.user.id}>\n` +
+                    `**Total Types** Â· ${allTypes.length}/25`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**All Available Types**\n${allTypes.map(t => `> \`${t}\``).join('\n')}`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `-# ${settings.emojie.wrench} Service Types Â· Changes take effect immediately`
+                ));
 
-            await interaction.editReply({
-                embeds: [embed],
-                ephemeral: false
-            });
+            await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
 
         } catch (error) {
-            console.error('❌ Error executing type_add command:', error);
-            
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing type_add command:`, error);
             await interaction.editReply({
-                content: '❌ An error occurred while adding service type.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} An error occurred while adding service type.`))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }

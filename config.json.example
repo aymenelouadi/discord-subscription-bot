@@ -1,0 +1,12 @@
+{
+    "DISCORD_TOKEN": "YOUR_BOT_TOKEN_HERE",
+    "CLIENT_ID": "YOUR_CLIENT_ID_HERE",
+    "MONGODB_URI": "mongodb+srv://USERNAME:PASSWORD@cluster.mongodb.net/?appName=ClusterName",
+    "OWNER": ["YOUR_DISCORD_USER_ID"],
+    "NOTIFY_TIME_DAY_ONE": 7,
+    "NOTIFY_TIME_DAY_TWO": 3,
+    "NOTIFY_TIME_DAY_THREE": 1,
+    "CHECK_HOURS": 12,
+    "LOG_SUB": ["YOUR_LOG_CHANNEL_ID"],
+    "LOG_END": ["YOUR_LOG_CHANNEL_ID"]
+}

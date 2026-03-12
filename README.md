@@ -1,20 +1,33 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/saiteja-"><img src="https://res.cloudinary.com/djoo9ukvd/image/upload/v1761418439/discord_images/mjbnatclqrl0kwyqriak.png" height="200" alt="Code Nexus | System V4"></a>
+  <a href="https://github.com/aymenelouadi/discord-subscription-bot">
+    <img src="https://res.cloudinary.com/djoo9ukvd/image/upload/v1761418439/discord_images/mjbnatclqrl0kwyqriak.png" height="200" alt="Discord Subscription Bot">
+  </a>
   <br>
-    Code Nexus | Sub V1
+  Discord Subscription Bot
   <br>
 </h1>
 
-<p align="center">💰 <b>Subscription System</b> — A fully automated role-based subscription system that allows users to subscribe to premium roles for a limited time. 
-It checks active subscriptions, renews or removes expired ones automatically, and provides admins with full control over duration, pricing, and notifications.
+<p align="center">
+  <a href="https://github.com/aymenelouadi/discord-subscription-bot/releases"><img src="https://img.shields.io/github/v/release/aymenelouadi/discord-subscription-bot?color=blue&label=version" alt="Version"></a>
+  <a href="https://github.com/aymenelouadi/discord-subscription-bot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/aymenelouadi/discord-subscription-bot" alt="License"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen" alt="Node.js"></a>
+  <a href="https://discord.gg/mFEehCPKEW"><img src="https://img.shields.io/discord/1234567890?color=5865F2&label=support&logo=discord" alt="Discord"></a>
 </p>
-<br>
 
-## 🔗 Resource Links
-- 🤝 Support Server: [Join Here](https://discord.gg/mFEehCPKEW)
-- 📺 Youtube Channel: [Youtube](https://www.youtube.com/@cn_nexus)
-- 💖 Donate us: [PayPal](https://www.paypal.com/paypalme/rewebby)
+<p align="center">
+  A fully automated role-based subscription management bot for Discord.<br>
+  Handles subscriptions, expirations, renewals, and notifications — all from slash commands.
+</p>
+
+---
+
+## 🔗 Links
+- 🤝 Support Server: [discord.gg/mFEehCPKEW](https://discord.gg/mFEehCPKEW)
+- 📺 YouTube: [@cn_nexus](https://www.youtube.com/@cn_nexus)
+- 💖 Donate: [PayPal](https://www.paypal.com/paypalme/rewebby)
+- 📋 Changelog: [CHANGELOG.md](CHANGELOG.md)
+- 🔒 Security Policy: [SECURITY.md](SECURITY.md)
 
 ## 📦 Prerequisites
 

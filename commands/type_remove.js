@@ -1,7 +1,7 @@
 // commands/type_remove.js
 // Code Nexus => https://discord.gg/wBTyCap8
 
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -11,7 +11,7 @@ try {
     const configFile = fs.readFileSync(configPath, 'utf8');
     config = JSON.parse(configFile);
 } catch (error) {
-    console.error('❌ Failed to load config.json:', error.message);
+    console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
     config = {
         OWNER: []
     };
@@ -23,7 +23,7 @@ const loadFreshSettings = () => {
         const settingsFile = fs.readFileSync(settingsPath, 'utf8');
         return JSON.parse(settingsFile);
     } catch (error) {
-        console.error('❌ Failed to load setting.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
         return { commands: {} };
     }
 };
@@ -43,8 +43,12 @@ module.exports = {
     async execute(client, interaction) {
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
-                content: '❌ You do not have permission to use this command.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} You do not have permission to use this command.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -53,23 +57,28 @@ module.exports = {
 
             const settings = loadFreshSettings();
             const typeToRemove = interaction.options.getString('type').trim().toUpperCase();
-            
+
             if (!settings.commands.subscribe) {
                 return await interaction.editReply({
-                    content: '❌ Subscribe command not found in settings.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Subscribe command not found in settings.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (!Array.isArray(settings.commands.subscribe.type) || settings.commands.subscribe.type.length === 0) {
                 return await interaction.editReply({
-                    content: '❌ No service types available to remove.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} No service types available to remove.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
-
-            console.log('Current types:', settings.commands.subscribe.type);
-            console.log('Looking for type:', typeToRemove);
 
             const foundType = settings.commands.subscribe.type.find(
                 type => type.toLowerCase() === typeToRemove.toLowerCase()
@@ -77,133 +86,118 @@ module.exports = {
 
             if (!foundType) {
                 return await interaction.editReply({
-                    content: `❌ Service type **${typeToRemove}** not found. Available types: ${settings.commands.subscribe.type.join(', ')}`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `${settings?.emojie?.error ?? "❌"} Service type \`${typeToRemove}\` not found.\n\n**Available types**\n${settings.commands.subscribe.type.map(t => `> \`${t}\``).join('\n')}`
+                            ))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (settings.commands.subscribe.type.length <= 1) {
                 return await interaction.editReply({
-                    content: '❌ Cannot remove the last service type. At least one type must remain.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Cannot remove the last service type. At least one type must remain.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
-            const confirmEmbed = new EmbedBuilder()
-                .setColor(0xFFA500)
-                .setTitle('⚠️ Confirm Removal')
-                .setDescription('Are you sure you want to remove this service type?')
-                .addFields(
-                    {
-                        name: '📋 Type to Remove',
-                        value: foundType,
-                        inline: true
-                    },
-                    {
-                        name: '📊 Remaining Types',
-                        value: `${settings.commands.subscribe.type.length - 1} types`,
-                        inline: true
-                    },
-                    {
-                        name: '🔧 Current Types',
-                        value: settings.commands.subscribe.type.join(', '),
-                        inline: false
-                    }
-                )
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'This action cannot be undone' 
-                });
+            const confirmContainer = new ContainerBuilder()
+                .setAccentColor(0xF0B232)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.type_remove} Confirm Removal`))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**Type to Remove** Â· \`${foundType}\`\n` +
+                    `**Remaining Types** Â· ${settings.commands.subscribe.type.length - 1} types\n\n` +
+                    `**Current Types**\n${settings.commands.subscribe.type.map(t => `> \`${t}\``).join('\n')}`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.warning} This action cannot be undone`));
 
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('confirm_remove')
-                        .setLabel('✅ Confirm Remove')
+                        .setLabel('Confirm Remove')
                         .setStyle(ButtonStyle.Danger),
                     new ButtonBuilder()
                         .setCustomId('cancel_remove')
-                        .setLabel('❌ Cancel')
+                        .setLabel('Cancel')
                         .setStyle(ButtonStyle.Secondary)
                 );
 
             const message = await interaction.editReply({
-                embeds: [confirmEmbed],
-                components: [row],
-                ephemeral: false
+                components: [confirmContainer, row],
+                flags: MessageFlags.IsComponentsV2
             });
 
             const collector = message.createMessageComponentCollector({
                 filter: (i) => i.user.id === interaction.user.id,
-                time: 30000 // 30 seconds
+                time: 30000
             });
 
             collector.on('collect', async (i) => {
                 try {
                     if (i.customId === 'confirm_remove') {
                         const currentSettings = loadFreshSettings();
-                        
+
                         currentSettings.commands.subscribe.type = currentSettings.commands.subscribe.type.filter(
                             type => type !== foundType
                         );
 
                         try {
-                            const settingsPath = path.join(__dirname, '..', 'setting.json');
-                            fs.writeFileSync(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
-                            
-                            console.log(`✅ Service type removed: ${foundType} by ${interaction.user.tag}`);
+                            const settingsPath = require('path').join(__dirname, '..', 'setting.json');
+                            require('fs').writeFileSync(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                            console.log(`${settings.emojie.success} Service type removed: ${foundType} by ${interaction.user.tag}`);
                         } catch (error) {
-                            console.error('❌ Failed to save settings:', error);
+                            console.error(`${settings?.emojie?.error ?? "❌"} Failed to save settings:`, error);
                             await i.update({
-                                content: '❌ Failed to save settings to file.',
-                                components: [],
-                                embeds: []
+                                components: [
+                                    new ContainerBuilder()
+                                        .setAccentColor(0xF23F43)
+                                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Failed to save settings to file.`))
+                                ],
+                                flags: MessageFlags.IsComponentsV2
                             });
                             return;
                         }
 
-                        const successEmbed = new EmbedBuilder()
-                            .setColor(0x00FF00)
-                            .setTitle('✅ Service Type Removed')
-                            .setDescription('Successfully removed service type from subscribe command')
-                            .addFields(
-                                {
-                                    name: '📋 Removed Type',
-                                    value: foundType,
-                                    inline: true
-                                },
-                                {
-                                    name: '👮‍♂️ Removed By',
-                                    value: `<@${interaction.user.id}>`,
-                                    inline: true
-                                },
-                                {
-                                    name: '📊 Remaining Types',
-                                    value: `${currentSettings.commands.subscribe.type.length}/25`,
-                                    inline: true
-                                },
-                                {
-                                    name: '🔧 Available Types',
-                                    value: currentSettings.commands.subscribe.type.join(', ') || 'None',
-                                    inline: false
-                                }
-                            )
-                            .setTimestamp();
+                        const successContainer = new ContainerBuilder()
+                            .setAccentColor(0x23C55E)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.type_remove} Service Type Removed`))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `**Removed Type** Â· \`${foundType}\`\n` +
+                                `**Removed By** Â· <@${interaction.user.id}>\n` +
+                                `**Remaining** Â· ${currentSettings.commands.subscribe.type.length}/25\n\n` +
+                                `**Available Types**\n${currentSettings.commands.subscribe.type.length > 0 ? currentSettings.commands.subscribe.type.map(t => `> \`${t}\``).join('\n') : '> None'}`
+                            ))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.wrench} Service Types Â· Changes take effect immediately`));
 
                         await i.update({
-                            embeds: [successEmbed],
-                            components: []
+                            components: [successContainer],
+                            flags: MessageFlags.IsComponentsV2
                         });
 
                     } else if (i.customId === 'cancel_remove') {
                         await i.update({
-                            content: '❌ Removal cancelled.',
-                            components: [],
-                            embeds: []
+                            components: [
+                                new ContainerBuilder()
+                                    .setAccentColor(0x5865F2)
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Removal cancelled.`))
+                            ],
+                            flags: MessageFlags.IsComponentsV2
                         });
                     }
                 } catch (error) {
-                    console.error('❌ Error handling confirmation:', error);
+                    console.error(`${settings?.emojie?.error ?? "❌"} Error handling confirmation:`, error);
                 }
             });
 
@@ -211,22 +205,29 @@ module.exports = {
                 if (collected.size === 0) {
                     try {
                         await message.edit({
-                            content: '⏰ Removal request timed out.',
-                            components: [],
-                            embeds: []
+                            components: [
+                                new ContainerBuilder()
+                                    .setAccentColor(0xF0B232)
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings.emojie.clock} Removal request timed out.`))
+                            ],
+                            flags: MessageFlags.IsComponentsV2
                         });
                     } catch (error) {
-                        console.error('❌ Error updating timed out message:', error);
+                        console.error(`${settings?.emojie?.error ?? "❌"} Error updating timed out message:`, error);
                     }
                 }
             });
 
         } catch (error) {
-            console.error('❌ Error executing type_remove command:', error);
-            
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing type_remove command:`, error);
+
             await interaction.editReply({
-                content: '❌ An error occurred while removing service type.',
-                ephemeral: false
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} An error occurred while removing service type.`))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }

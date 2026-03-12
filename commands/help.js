@@ -1,5 +1,5 @@
 // Code Nexus => https://discord.gg/wBTyCap8
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +9,7 @@ try {
     const settingsFile = fs.readFileSync(settingsPath, 'utf8');
     settings = JSON.parse(settingsFile);
 } catch (error) {
-    console.error('❌ Failed to load setting.json:', error.message);
+    console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
     settings = {
         commands: {
             help: {
@@ -27,7 +27,7 @@ try {
     const configFile = fs.readFileSync(configPath, 'utf8');
     config = JSON.parse(configFile);
 } catch (error) {
-    console.error('❌ Failed to load config.json:', error.message);
+    console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
     config = {
         OWNER: []
     };
@@ -60,8 +60,12 @@ module.exports = {
     async execute(client, interaction) {
         if (!settings.commands.help?.enable) {
             return await interaction.reply({
-                content: '❌ This command is currently disabled.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} This command is currently disabled.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -70,7 +74,9 @@ module.exports = {
 
             const isOwner = config.OWNER.includes(interaction.user.id);
             const commandSearch = interaction.options.getString('command');
-            
+
+            const permLabel = (cmd) => cmd.options === 'admin' ? `${settings.emojie.key} Admin` : `${settings.emojie.help} Public`;
+
             if (commandSearch) {
                 const commandConfig = Object.values(settings.commands).find(
                     cmd => cmd.name === commandSearch && cmd.enable
@@ -78,28 +84,49 @@ module.exports = {
 
                 if (!commandConfig) {
                     return await interaction.editReply({
-                        content: `❌ Command \`/${commandSearch}\` not found or is disabled.`,
-                        ephemeral: true
+                        components: [
+                            new ContainerBuilder()
+                                .setAccentColor(0xF23F43)
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Command \`/${commandSearch}\` not found or is disabled.`))
+                        ],
+                        flags: MessageFlags.IsComponentsV2
                     });
                 }
 
-                const embed = createCommandEmbed(commandConfig, isOwner);
+                let detail =
+                    `**Command** Â· \`/${commandConfig.name}\`\n` +
+                    `**Description** Â· ${commandConfig.description}\n` +
+                    `**Permission** Â· ${permLabel(commandConfig)}\n` +
+                    `**Status** Â· ${commandConfig.enable ? '${settings.emojie.success} Enabled' : '${settings?.emojie?.error ?? "❌"} Disabled'}`;
+
+                if (commandConfig.type?.length) detail += `\n\n**Types**\n${commandConfig.type.map(t => `> \`${t}\``).join('\n')}`;
+                if (commandConfig.plan?.length) detail += `\n\n**Plans**\n${commandConfig.plan.map(p => `> \`${p}\``).join('\n')}`;
+
+                if (commandConfig.options === 'admin' && !isOwner) {
+                    detail += `\n\n> ${settings.emojie.warning} This command requires administrator permissions.`;
+                }
+
                 return await interaction.editReply({
-                    embeds: [embed],
-                    ephemeral: false
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(commandConfig.options === 'admin' ? 0xF0B232 : 0x5865F2)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${(settings.emojie[commandSearch] || settings.emojie.search)} Command: /${commandConfig.name}`))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(detail))
+                            .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent('-# Use /help to see all available commands'))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             const publicCommands = [];
             const adminCommands = [];
 
-            Object.entries(settings.commands).forEach(([commandName, commandConfig]) => {
-                if (commandConfig.enable && commandName !== 'help') {
-                    if (commandConfig.options === 'admin') {
-                        adminCommands.push(commandConfig);
-                    } else if (commandConfig.options === 'public') {
-                        publicCommands.push(commandConfig);
-                    }
+            Object.entries(settings.commands).forEach(([commandName, cmd]) => {
+                if (cmd.enable && commandName !== 'help') {
+                    if (cmd.options === 'admin') adminCommands.push(cmd);
+                    else if (cmd.options === 'public') publicCommands.push(cmd);
                 }
             });
 
@@ -108,162 +135,99 @@ module.exports = {
             const totalPages = Math.ceil(allCommands.length / itemsPerPage);
             let currentPage = 1;
 
-            const createPageEmbed = (page) => {
-                const startIndex = (page - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const pageCommands = allCommands.slice(startIndex, endIndex);
+            const createPage = (page) => {
+                const start = (page - 1) * itemsPerPage;
+                const pageCmds = allCommands.slice(start, start + itemsPerPage);
 
-                const embed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setTitle('🛟 Available Commands')
-                    .setDescription('Here are all the commands you can use:')
-                    .setTimestamp();
+                const lines = pageCmds.map(cmd => {
+                    const perm = permLabel(cmd);
+                    return `**\`/${cmd.name}\`**  ${perm}\n> ${cmd.description}`;
+                }).join('\n\n');
 
-                // Add commands to the page
-                pageCommands.forEach(cmd => {
-                    const permission = cmd.options === 'admin' ? '👮‍♂️ Admin Only' : '👥 Public';
-                    const description = `${cmd.description}\n**Permission:** ${permission}`;
-
-                    embed.addFields({
-                        name: `/${cmd.name}`,
-                        value: description,
-                        inline: false
-                    });
-                });
-
-                embed.setFooter({ 
-                    text: `Page ${page} of ${totalPages} • ${allCommands.length} total commands • Use /help <command> for details` 
-                });
-
-                return embed;
+                return new ContainerBuilder()
+                    .setAccentColor(0x5865F2)
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.help} Available Commands`))
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(lines))
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                        `-# Page ${page}/${totalPages} Â· ${allCommands.length} commands total Â· Use /help <command> for details`
+                    ));
             };
 
             const createButtons = (page) => {
-                const row = new ActionRowBuilder();
-
-                if (page > 1) {
-                    row.addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('help_prev')
-                            .setLabel('⬅️')
-                            .setStyle(ButtonStyle.Primary)
-                    );
-                }
-
-                row.addComponents(
+                return new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('help_prev')
+                        .setEmoji(settings.emojie.arrow_left)
+                        .setLabel('Prev')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(page <= 1),
                     new ButtonBuilder()
                         .setCustomId('help_home')
-                        .setLabel('🔄️')
+                        .setEmoji(settings.emojie.home)
+                        .setLabel('Home')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setDisabled(page === 1),
+                    new ButtonBuilder()
+                        .setCustomId('help_next')
+                        .setEmoji(settings.emojie.arrow_right)
+                        .setLabel('Next')
                         .setStyle(ButtonStyle.Primary)
-                        .setDisabled(page === 1)
+                        .setDisabled(page >= totalPages)
                 );
-
-                if (page < totalPages) {
-                    row.addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('help_next')
-                            .setLabel('➡️')
-                            .setStyle(ButtonStyle.Primary)
-                    );
-                }
-
-                return row;
             };
 
-            function createCommandEmbed(commandConfig, isUserOwner) {
-                const permission = commandConfig.options === 'admin' ? '👮‍♂️ Admin Only' : '👥 Public';
-                const color = commandConfig.options === 'admin' ? 0xFF0000 : 0x00FF00;
-
-                const embed = new EmbedBuilder()
-                    .setColor(color)
-                    .setTitle(`Command: /${commandConfig.name}`)
-                    .setDescription(commandConfig.description)
-                    .addFields(
-                        { name: 'Permission Level', value: permission, inline: true },
-                        { name: 'Status', value: commandConfig.enable ? '✅ Enabled' : '❌ Disabled', inline: true }
-                    )
-                    .setTimestamp();
-
-                if (commandConfig.type || commandConfig.plan) {
-                    let optionsText = '';
-                    
-                    if (commandConfig.type) {
-                        optionsText += `**Service Types:** ${commandConfig.type.join(', ')}\n`;
-                    }
-                    
-                    if (commandConfig.plan) {
-                        optionsText += `**Plans:** ${commandConfig.plan.join(', ')}`;
-                    }
-
-                    embed.addFields({
-                        name: '📋 Available Options',
-                        value: optionsText,
-                        inline: false
-                    });
-                }
-
-                if (commandConfig.options === 'admin' && !isUserOwner) {
-                    embed.addFields({
-                        name: '⚠️ Access Restricted',
-                        value: 'This command requires administrator permissions.',
-                        inline: false
-                    });
-                }
-
-                embed.setFooter({ 
-                    text: 'Use /help to see all available commands' 
-                });
-
-                return embed;
-            }
-
             const message = await interaction.editReply({
-                embeds: [createPageEmbed(currentPage)],
-                components: totalPages > 1 ? [createButtons(currentPage)] : []
+                components: totalPages > 1
+                    ? [createPage(currentPage), createButtons(currentPage)]
+                    : [createPage(currentPage)],
+                flags: MessageFlags.IsComponentsV2
             });
 
             if (totalPages <= 1) return;
 
             const collector = message.createMessageComponentCollector({
                 filter: (i) => i.user.id === interaction.user.id,
-                time: 300000 // 5 minutes
+                time: 300000
             });
 
             collector.on('collect', async (i) => {
                 try {
-                    if (i.customId === 'help_prev' && currentPage > 1) {
-                        currentPage--;
-                    } else if (i.customId === 'help_next' && currentPage < totalPages) {
-                        currentPage++;
-                    } else if (i.customId === 'help_home') {
-                        currentPage = 1;
-                    }
+                    if (i.customId === 'help_prev' && currentPage > 1) currentPage--;
+                    else if (i.customId === 'help_next' && currentPage < totalPages) currentPage++;
+                    else if (i.customId === 'help_home') currentPage = 1;
 
                     await i.update({
-                        embeds: [createPageEmbed(currentPage)],
-                        components: [createButtons(currentPage)]
+                        components: [createPage(currentPage), createButtons(currentPage)],
+                        flags: MessageFlags.IsComponentsV2
                     });
                 } catch (error) {
-                    console.error('❌ Error handling interaction:', error);
+                    console.error(`${settings?.emojie?.error ?? "❌"} Error handling interaction:`, error);
                 }
             });
 
             collector.on('end', async () => {
                 try {
                     await message.edit({
-                        components: []
+                        components: [createPage(currentPage)],
+                        flags: MessageFlags.IsComponentsV2
                     });
                 } catch (error) {
-                    console.error('❌ Error ending collector:', error);
+                    console.error(`${settings?.emojie?.error ?? "❌"} Error ending collector:`, error);
                 }
             });
 
         } catch (error) {
-            console.error('❌ Error executing help command:', error);
-            
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing help command:`, error);
+
             await interaction.editReply({
-                content: '❌ An error occurred while fetching command list.',
-                ephemeral: false
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} An error occurred while fetching command list.`))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }

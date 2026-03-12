@@ -1,5 +1,12 @@
 // Code Nexus => https://discord.gg/wBTyCap8
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    MessageFlags
+} = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,7 +17,7 @@ const loadSettings = () => {
         const settingsFile = fs.readFileSync(settingsPath, 'utf8');
         settings = JSON.parse(settingsFile);
     } catch (error) {
-        console.error('❌ Failed to load setting.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
         settings = {
             commands: {
                 subscribe: {
@@ -33,7 +40,7 @@ const loadConfig = () => {
         const configFile = fs.readFileSync(configPath, 'utf8');
         config = JSON.parse(configFile);
     } catch (error) {
-        console.error('❌ Failed to load config.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
         config = {
             OWNER: [],
             LOG_SUB: []
@@ -107,15 +114,23 @@ module.exports = {
 
         if (!settings.commands.subscribe.enable) {
             return await interaction.reply({
-                content: '❌ This command is currently disabled.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} This command is currently disabled.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
-                content: '❌ You do not have permission to use this command.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} You do not have permission to use this command.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -134,24 +149,40 @@ module.exports = {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 return await interaction.editReply({
-                    content: '❌ Please enter a valid email address.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Please enter a valid email address.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             const existingSubscriptionByEmail = await client.Subscription.findOne({ email });
             if (existingSubscriptionByEmail) {
                 return await interaction.editReply({
-                    content: `❌ This email is already registered for user <@${existingSubscriptionByEmail.userId}>`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `${settings?.emojie?.error ?? "❌"} This email is already registered for user <@${existingSubscriptionByEmail.userId}>`
+                            ))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             const existingSubscriptionById = await client.Subscription.findOne({ customId });
             if (existingSubscriptionById) {
                 return await interaction.editReply({
-                    content: `❌ This custom ID (${customId}) is already registered for user <@${existingSubscriptionById.userId}>`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                `${settings?.emojie?.error ?? "❌"} This custom ID (\`${customId}\`) is already registered for user <@${existingSubscriptionById.userId}>`
+                            ))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
@@ -177,62 +208,80 @@ module.exports = {
 
             let dmSuccess = false;
             try {
-                const userEmbed = new EmbedBuilder()
-                    .setColor(0x00ff00)
-                    .setTitle('🎉 Your Subscription Has Been Activated')
-                    .setFields([
-                        { name: '🆔 Custom ID', value: customId, inline: true },
-                        { name: '📋 Service Type', value: serviceType, inline: true },
-                        { name: '📊 Plan', value: planName, inline: true },
-                        { name: '⏰ Duration', value: `${duration} days`, inline: true },
-                        { name: '📧 Email', value: email, inline: true },
-                        { name: '🔑 Password', value: password, inline: true },
-                        { name: '📅 Start Date', value: `<t:${Math.floor(startDate.getTime() / 1000)}:F>`, inline: true },
-                        { name: '📅 End Date', value: `<t:${Math.floor(endDate.getTime() / 1000)}:F>`, inline: true }
-                    ])
-                    .setTimestamp()
-                    .setFooter({ text: 'Thank you for your trust! 🚀' });
+                const dmContainer = new ContainerBuilder()
+                    .setAccentColor(0x23C55E)
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.subscribe} Subscription Activated`))
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                        `**ID** Â· \`${customId}\`\n` +
+                        `**Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
+                        `**Email** Â· ${email}  **Password** Â· \`${password}\`\n` +
+                        `**Duration** Â· ${duration} days\n` +
+                        `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:D>`
+                    ))
+                    .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.rocket} Thank you for your trust!`));
 
-                await targetUser.send({ embeds: [userEmbed] });
+                await targetUser.send({
+                    components: [dmContainer],
+                    flags: MessageFlags.IsComponentsV2
+                });
                 dmSuccess = true;
-                console.log(`✅ Sent subscription details to user ${targetUser.id}`);
+                console.log(`${settings.emojie.success} Sent subscription details to user ${targetUser.id}`);
             } catch (dmError) {
-                console.error(`❌ Failed to send message to user ${targetUser.id}:`, dmError.message);
+                console.error(`${settings?.emojie?.error ?? "❌"} Failed to send message to user ${targetUser.id}:`, dmError.message);
                 dmSuccess = false;
             }
 
+            const replyContainer = new ContainerBuilder()
+                .setAccentColor(0x23C55E)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.subscribe} Subscription Created`))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**User** Â· <@${targetUser.id}>\n` +
+                    `**ID** Â· \`${customId}\`  **Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
+                    `**Email** Â· ${email}  **Duration** Â· ${duration} days\n` +
+                    `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:R>`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    dmSuccess
+                        ? `-# ${settings.emojie.mail} Subscription data delivered to user`
+                        : `-# ${settings.emojie.warning} DMs closed â€” user was not notified`
+                ));
+
             await interaction.editReply({
-                content: `✅ Created **${planName}** subscription for <@${targetUser.id}>\n🆔 Custom ID: ${customId}\n📋 Type: ${serviceType}\n📧 Email: ${email}\n⏰ Duration: ${duration} days\n📅 Ends at: <t:${Math.floor(endDate.getTime() / 1000)}:F>\n${dmSuccess ? '✅ Data sent to user' : '⚠️ Data not sent to user (DMs closed)'}`,
-                ephemeral: false
+                components: [replyContainer],
+                flags: MessageFlags.IsComponentsV2
             });
 
             if (config.LOG_SUB && config.LOG_SUB.length > 0) {
                 const logChannelId = config.LOG_SUB[0];
                 const logChannel = await client.channels.fetch(logChannelId).catch(() => null);
-                
+
                 if (logChannel) {
-                    const logEmbed = new EmbedBuilder()
-                        .setColor(dmSuccess ? 0x00ff00 : 0xffa500)
-                        .setTitle(dmSuccess ? '📝 New Subscription' : '⚠️ New Subscription - Data Not Sent')
-                        .setFields([
-                            { name: '🆔 Custom ID', value: customId, inline: true },
-                            { name: '👤 User', value: `<@${targetUser.id}> (${targetUser.id})`, inline: true },
-                            { name: '📋 Type', value: serviceType, inline: true },
-                            { name: '📊 Plan', value: planName, inline: true },
-                            { name: '📧 Email', value: email, inline: true },
-                            { name: '⏰ Duration', value: `${duration} days`, inline: true },
-                            { name: '📅 Start Date', value: `<t:${Math.floor(startDate.getTime() / 1000)}:F>`, inline: true },
-                            { name: '📅 End Date', value: `<t:${Math.floor(endDate.getTime() / 1000)}:F>`, inline: true },
-                            { name: '👮‍♂️ Admin', value: `<@${interaction.user.id}>`, inline: true },
-                            { name: '📨 Delivery Status', value: dmSuccess ? '✅ Sent' : '❌ Failed', inline: true }
-                        ])
-                        .setTimestamp();
+                    const logContainer = new ContainerBuilder()
+                        .setAccentColor(dmSuccess ? 0x23C55E : 0xF0B232)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                            dmSuccess ? `## ${settings.emojie.subscribe} New Subscription` : `## ${settings.emojie.warning} New Subscription â€” Data Not Sent`
+                        ))
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                            `**ID** Â· \`${customId}\`\n` +
+                            `**User** Â· <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
+                            `**Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
+                            `**Email** Â· ${email}  **Duration** Â· ${duration} days\n` +
+                            `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:D>\n` +
+                            `**Admin** Â· <@${interaction.user.id}>  **Delivery** Â· ${dmSuccess ? `${settings.emojie.success} Sent` : `${settings?.emojie?.error ?? "❌"} Failed`}` +
+                            (note ? `\n**Note** Â· ${note}` : '')
+                        ))
+                        .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.clipboard} Subscription Log`));
 
-                    if (note) {
-                        logEmbed.addFields({ name: '📝 Notes', value: note, inline: false });
-                    }
-
-                    await logChannel.send({ embeds: [logEmbed] });
+                    await logChannel.send({
+                        components: [logContainer],
+                        flags: MessageFlags.IsComponentsV2
+                    });
                 }
             }
 
@@ -241,29 +290,33 @@ module.exports = {
                     try {
                         const owner = await client.users.fetch(ownerId);
                         await owner.send({
-                            content: `⚠️ **Warning**: Failed to send subscription data to user <@${targetUser.id}>\n\n**Subscription Details:**\n- Custom ID: ${customId}\n- Type: ${serviceType}\n- Plan: ${planName}\n- Email: ${email}\n- Duration: ${duration} days\n\nPlease contact the user manually.`
+                            content: `${settings.emojie.warning} **Warning**: Failed to send subscription data to user <@${targetUser.id}>\n\n**Subscription Details:**\n- Custom ID: ${customId}\n- Type: ${serviceType}\n- Plan: ${planName}\n- Email: ${email}\n- Duration: ${duration} days\n\nPlease contact the user manually.`
                         });
                     } catch (ownerError) {
-                        console.error(`❌ Failed to send warning to owner ${ownerId}:`, ownerError.message);
+                        console.error(`${settings?.emojie?.error ?? "❌"} Failed to send warning to owner ${ownerId}:`, ownerError.message);
                     }
                 }
             }
 
         } catch (error) {
-            console.error('❌ Error executing subscribe command:', error);
-            
-            let errorMessage = '❌ An error occurred while processing the subscription request.';
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing subscribe command:`, error);
+
+            let errorMessage = `${settings?.emojie?.error ?? "❌"} An error occurred while processing the subscription request.`;
             if (error.code === 11000) {
                 if (error.keyPattern && error.keyPattern.customId) {
-                    errorMessage = '❌ This custom ID is already registered.';
+                    errorMessage = `${settings?.emojie?.error ?? "❌"} This custom ID is already registered.`;
                 } else if (error.keyPattern && error.keyPattern.email) {
-                    errorMessage = '❌ This email is already registered.';
+                    errorMessage = `${settings?.emojie?.error ?? "❌"} This email is already registered.`;
                 }
             }
 
             await interaction.editReply({
-                content: errorMessage,
-                ephemeral: false
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(errorMessage))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }

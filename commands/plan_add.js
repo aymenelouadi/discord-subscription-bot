@@ -1,7 +1,7 @@
 // commands/plan_add.js
 // Code Nexus => https://discord.gg/wBTyCap8
 
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,7 +12,7 @@ const loadSettings = () => {
         const settingsFile = fs.readFileSync(settingsPath, 'utf8');
         settings = JSON.parse(settingsFile);
     } catch (error) {
-        console.error('❌ Failed to load setting.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load setting.json:`, error.message);
         settings = {
             commands: {}
         };
@@ -27,7 +27,7 @@ const loadConfig = () => {
         const configFile = fs.readFileSync(configPath, 'utf8');
         config = JSON.parse(configFile);
     } catch (error) {
-        console.error('❌ Failed to load config.json:', error.message);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to load config.json:`, error.message);
         config = {
             OWNER: []
         };
@@ -41,7 +41,7 @@ const saveSettings = (newSettings) => {
         fs.writeFileSync(settingsPath, JSON.stringify(newSettings, null, 4), 'utf8');
         return true;
     } catch (error) {
-        console.error('❌ Failed to save settings:', error);
+        console.error(`${settings?.emojie?.error ?? "❌"} Failed to save settings:`, error);
         return false;
     }
 };
@@ -62,8 +62,12 @@ module.exports = {
 
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
-                content: '❌ You do not have permission to use this command.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} You do not have permission to use this command.`))
+                ],
+                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
             });
         }
 
@@ -71,13 +75,16 @@ module.exports = {
             await interaction.deferReply({ ephemeral: false });
 
             const newPlan = interaction.options.getString('plan').trim();
-            
             const currentSettings = loadSettings();
 
             if (!currentSettings.commands.subscribe) {
                 return await interaction.editReply({
-                    content: '❌ Subscribe command not found in settings.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Subscribe command not found in settings.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
@@ -87,15 +94,23 @@ module.exports = {
 
             if (currentSettings.commands.subscribe.plan.includes(newPlan)) {
                 return await interaction.editReply({
-                    content: `❌ Plan **${newPlan}** already exists.`,
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Plan **${newPlan}** already exists.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
             if (currentSettings.commands.subscribe.plan.length >= 25) {
                 return await interaction.editReply({
-                    content: '❌ Maximum limit of 25 plans reached. Please remove some plans first.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Maximum limit of 25 plans reached. Please remove some plans first.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
@@ -111,58 +126,50 @@ module.exports = {
             };
 
             const saveSuccess = saveSettings(updatedSettings);
-            
+
             if (!saveSuccess) {
                 return await interaction.editReply({
-                    content: '❌ Failed to save settings to file.',
-                    ephemeral: true
+                    components: [
+                        new ContainerBuilder()
+                            .setAccentColor(0xF23F43)
+                            .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} Failed to save settings to file.`))
+                    ],
+                    flags: MessageFlags.IsComponentsV2
                 });
             }
 
-            console.log(`✅ Plan added: ${newPlan} by ${interaction.user.tag}`);
+            console.log(`${settings.emojie.success} Plan added: ${newPlan} by ${interaction.user.tag}`);
 
-            const embed = new EmbedBuilder()
-                .setColor(0x00FF00)
-                .setTitle('✅ Plan Added')
-                .setDescription('Successfully added new plan to subscribe command')
-                .addFields(
-                    {
-                        name: '📊 New Plan',
-                        value: newPlan,
-                        inline: true
-                    },
-                    {
-                        name: '👮‍♂️ Added By',
-                        value: `<@${interaction.user.id}>`,
-                        inline: true
-                    },
-                    {
-                        name: '📈 Total Plans',
-                        value: `${updatedSettings.commands.subscribe.plan.length}/25`,
-                        inline: true
-                    },
-                    {
-                        name: '🔧 Available Plans',
-                        value: updatedSettings.commands.subscribe.plan.join(', ') || 'None',
-                        inline: false
-                    }
-                )
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'Plans Management • Changes take effect immediately' 
-                });
+            const allPlans = updatedSettings.commands.subscribe.plan;
+            const container = new ContainerBuilder()
+                .setAccentColor(0x23C55E)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.plan_add} Plan Added`))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**New Plan** Â· \`${newPlan}\`\n` +
+                    `**Added By** Â· <@${interaction.user.id}>\n` +
+                    `**Total Plans** Â· ${allPlans.length}/25`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `**All Available Plans**\n${allPlans.map(p => `> \`${p}\``).join('\n')}`
+                ))
+                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                    `-# ${settings.emojie.chart} Plans Management Â· Changes take effect immediately`
+                ));
 
-            await interaction.editReply({
-                embeds: [embed],
-                ephemeral: false
-            });
+            await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
 
         } catch (error) {
-            console.error('❌ Error executing plan_add command:', error);
-            
+            console.error(`${settings?.emojie?.error ?? "❌"} Error executing plan_add command:`, error);
             await interaction.editReply({
-                content: '❌ An error occurred while adding plan.',
-                ephemeral: true
+                components: [
+                    new ContainerBuilder()
+                        .setAccentColor(0xF23F43)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`${settings?.emojie?.error ?? "❌"} An error occurred while adding plan.`))
+                ],
+                flags: MessageFlags.IsComponentsV2
             });
         }
     }
