@@ -12,6 +12,7 @@ module.exports = {
             customId:    { type: String, required: true, unique: true, trim: true },
             email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
             password:    { type: String, required: true, minlength: 2 },
+            ip:          { type: String, default: '' },
             planName:    { type: String, required: true },
             serviceType: { type: String, required: true },
             startDate:   { type: Date,   required: true },

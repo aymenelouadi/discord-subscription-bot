@@ -100,6 +100,12 @@ const createCommandData = () => {
                 .setRequired(true)
                 .setMinLength(2))
         .addStringOption(option =>
+            option.setName('ip')
+                .setDescription('VPS IP address')
+                .setRequired(true)
+                .setMinLength(7)
+                .setMaxLength(45))
+        .addStringOption(option =>
             option.setName('note')
                 .setDescription('Additional notes')
                 .setRequired(false));
@@ -144,6 +150,7 @@ module.exports = {
             const duration = interaction.options.getInteger('duration');
             const email = interaction.options.getString('email').toLowerCase().trim();
             const password = interaction.options.getString('password');
+            const ip = interaction.options.getString('ip').trim();
             const note = interaction.options.getString('note') || '';
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -195,6 +202,7 @@ module.exports = {
                 customId: customId,
                 email: email,
                 password: password,
+                ip: ip,
                 planName: planName,
                 serviceType: serviceType,
                 startDate: startDate,
@@ -213,11 +221,12 @@ module.exports = {
                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.subscribe} Subscription Activated`))
                     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                        `**ID** Â· \`${customId}\`\n` +
-                        `**Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
-                        `**Email** Â· ${email}  **Password** Â· \`${password}\`\n` +
-                        `**Duration** Â· ${duration} days\n` +
-                        `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:D>`
+                        `**ID** · \`${customId}\`\n` +
+                        `**Type** · ${serviceType}  **Plan** · ${planName}\n` +
+                        `**IP** · \`${ip}\`  **Password** · \`${password}\`\n` +
+                        `**Email** · ${email}\n` +
+                        `**Duration** · ${duration} days\n` +
+                        `**Starts** · <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** · <t:${Math.floor(endDate.getTime() / 1000)}:D>`
                     ))
                     .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.rocket} Thank you for your trust!`));
@@ -238,16 +247,16 @@ module.exports = {
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.subscribe} Subscription Created`))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `**User** Â· <@${targetUser.id}>\n` +
-                    `**ID** Â· \`${customId}\`  **Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
-                    `**Email** Â· ${email}  **Duration** Â· ${duration} days\n` +
-                    `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:R>`
+                    `**User** · <@${targetUser.id}>\n` +
+                    `**ID** · \`${customId}\`  **Type** · ${serviceType}  **Plan** · ${planName}\n` +
+                    `**IP** · \`${ip}\`  **Email** · ${email}  **Duration** · ${duration} days\n` +
+                    `**Starts** · <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** · <t:${Math.floor(endDate.getTime() / 1000)}:R>`
                 ))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                     dmSuccess
                         ? `-# ${settings.emojie.mail} Subscription data delivered to user`
-                        : `-# ${settings.emojie.warning} DMs closed â€” user was not notified`
+                        : `-# ${settings.emojie.warning} DMs closed — user was not notified`
                 ));
 
             await interaction.editReply({
@@ -263,17 +272,17 @@ module.exports = {
                     const logContainer = new ContainerBuilder()
                         .setAccentColor(dmSuccess ? 0x23C55E : 0xF0B232)
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                            dmSuccess ? `## ${settings.emojie.subscribe} New Subscription` : `## ${settings.emojie.warning} New Subscription â€” Data Not Sent`
+                            dmSuccess ? `## ${settings.emojie.subscribe} New Subscription` : `## ${settings.emojie.warning} New Subscription — Data Not Sent`
                         ))
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                            `**ID** Â· \`${customId}\`\n` +
-                            `**User** Â· <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
-                            `**Type** Â· ${serviceType}  **Plan** Â· ${planName}\n` +
-                            `**Email** Â· ${email}  **Duration** Â· ${duration} days\n` +
-                            `**Starts** Â· <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** Â· <t:${Math.floor(endDate.getTime() / 1000)}:D>\n` +
-                            `**Admin** Â· <@${interaction.user.id}>  **Delivery** Â· ${dmSuccess ? `${settings.emojie.success} Sent` : `${settings?.emojie?.error ?? "❌"} Failed`}` +
-                            (note ? `\n**Note** Â· ${note}` : '')
+                            `**ID** · \`${customId}\`\n` +
+                            `**User** · <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
+                            `**Type** · ${serviceType}  **Plan** · ${planName}\n` +
+                            `**IP** · \`${ip}\`  **Email** · ${email}  **Duration** · ${duration} days\n` +
+                            `**Starts** · <t:${Math.floor(startDate.getTime() / 1000)}:D>  **Expires** · <t:${Math.floor(endDate.getTime() / 1000)}:D>\n` +
+                            `**Admin** · <@${interaction.user.id}>  **Delivery** · ${dmSuccess ? `${settings.emojie.success} Sent` : `${settings?.emojie?.error ?? "❌"} Failed`}` +
+                            (note ? `\n**Note** · ${note}` : '')
                         ))
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${settings.emojie.clipboard} Subscription Log`));

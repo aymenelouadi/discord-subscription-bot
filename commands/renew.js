@@ -146,6 +146,7 @@ module.exports = {
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                             `**ID** · \`${subscription.customId}\`\n` +
                             `**Type** · ${subscription.serviceType}  **Plan** · ${subscription.planName}\n` +
+                            (subscription.ip ? `**IP** · \`${subscription.ip}\`  ` : '') + `**Password** · \`${subscription.password}\`\n` +
                             `**Email** · ${subscription.email}\n` +
                             `**Extended by** · ${addDays} day${addDays !== 1 ? 's' : ''}\n` +
                             `**New Expiry** · <t:${Math.floor(newEndDate.getTime() / 1000)}:D>  (<t:${Math.floor(newEndDate.getTime() / 1000)}:R>)`

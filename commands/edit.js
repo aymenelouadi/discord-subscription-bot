@@ -40,6 +40,12 @@ module.exports = {
                     .setMinLength(2)
                     .setMaxLength(100))
             .addStringOption(opt =>
+                opt.setName('ip')
+                    .setDescription('New VPS IP address')
+                    .setRequired(false)
+                    .setMinLength(7)
+                    .setMaxLength(45))
+            .addStringOption(opt =>
                 opt.setName('note')
                     .setDescription('Add or update a note (use "clear" to remove existing note)')
                     .setRequired(false)
@@ -100,12 +106,13 @@ module.exports = {
             const customId  = interaction.options.getString('custom_id').trim();
             const newEmail  = interaction.options.getString('email');
             const newPass   = interaction.options.getString('password');
+            const newIp     = interaction.options.getString('ip');
             const newNote   = interaction.options.getString('note');
             const newEndRaw = interaction.options.getString('end_date');
             const newStatus = interaction.options.getString('status');
 
             // At least one field must be provided
-            if (!newEmail && !newPass && !newNote && !newEndRaw && !newStatus) {
+            if (!newEmail && !newPass && !newIp && !newNote && !newEndRaw && !newStatus) {
                 return await interaction.editReply({
                     components: [
                         new ContainerBuilder().setAccentColor(0xF0B232)
@@ -166,6 +173,11 @@ module.exports = {
             if (newPass) {
                 sub.password = newPass;
                 changes.push('**Password** · updated *(hidden)*');
+            }
+            if (newIp) {
+                const oldIp = sub.ip || 'none';
+                sub.ip = newIp.trim();
+                changes.push('**IP** · `' + oldIp + '` → `' + sub.ip + '`');
             }
             if (newNote !== null) {
                 if (newNote === 'clear') {
