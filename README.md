@@ -1,4 +1,4 @@
-<h1 align="center">
+﻿<h1 align="center">
   <br>
   <a href="https://github.com/aymenelouadi/discord-subscription-bot">
     <img src="https://res.cloudinary.com/djoo9ukvd/image/upload/v1761418439/discord_images/mjbnatclqrl0kwyqriak.png" height="200" alt="Discord Subscription Bot">
@@ -17,7 +17,7 @@
 
 <p align="center">
   A fully automated role-based subscription management bot for Discord.<br>
-  Handles subscriptions, expirations, renewals, and notifications — all from slash commands.
+  Handles subscriptions, expirations, renewals, notifications, charts, and diagnostics — all from slash commands.
 </p>
 
 ---
@@ -36,123 +36,109 @@
 
 ## 🚀 Getting Started
 
-- Download the project in [Visual studio code](https://code.visualstudio.com/), put the project in it, and open a terminal via CTRL + SHIFT + ` or via the button at the top left, then Terminal, then New Terminal, and write the following:
+- Download the project in [Visual Studio Code](https://code.visualstudio.com/), open a terminal via ``CTRL + SHIFT + ``` and run:
 ```
 npm install
 ```
 
-- Wait for all the dependencies to be installed
-- go to [config.json](config.json) complete all of them
-- Type `npm start` or `node index.js` or `nodeon index.js` to start the bot in cmd
-
+- Fill in [config.json](config.json) with your credentials.
+- Start the bot:
 ```
-if you use hosting
+node index.js
 ```
-- add project en `.zip` and decompress project
-- go to [config.json](config.json) complete all of them
-- finally run hosting
 
-If you need any additional help [join support server discord](https://discord.gg/mFEehCPKEW)
+**If you use hosting:**
+- Upload the project as `.zip` and extract it.
+- Fill in [config.json](config.json).
+- Run the bot from your hosting panel.
 
-<br>
+If you need help, [join the support server](https://discord.gg/mFEehCPKEW).
 
-<h1 align="center"> ✨ Features ✨ </h1>
+---
 
-**💳 Subscription System**
-- Automatic tracking of active, expired, and cancelled subscriptions.
-- Manual and automatic cancellation options.
-- Logs sent to the specified channel for transparency.
+<h1 align="center">✨ Features ✨</h1>
 
-**📬 Notifications**
-- DM notifications to users when their subscription is created, renewed, or cancelled.
-- Owner alerts when a user’s DM is closed or delivery fails.
+**💳 Subscription Management**
+- Full lifecycle tracking: active → expired → cancelled.
+- Create, renew, cancel, and search subscriptions with a custom ID system.
+- Edit any subscription field (email, password, note, end date, status) without deleting it.
+
+**📬 Smart Notifications**
+- DM alerts at configurable stages: 7, 3, and 1 day before expiry.
+- Scheduled reminders stored in the database and delivered automatically via cron.
+- Owner alerts when a user's DM fails.
+
+**📊 Charts & Statistics**
+- `/stats` — comprehensive database dashboard.
+- `/chart` — 4 visual types: status bar, status donut, plans bar, services bar, and monthly timeline.
+- Rendered server-side with `@napi-rs/canvas` — no external service required.
+
+**🔍 Search & Edit**
+- `/search` — find any subscription by `customId`, `userId`, `email`, `planName`, or `serviceType`.
+- `/edit` — update fields on an existing subscription with old→new change tracking in the log.
+
+**🔬 Diagnostics**
+- `/test` — instant health report: WS ping, MongoDB state, config validation, uptime, and memory.
 
 **🔒 Security & Permissions**
-- Owner-only access for sensitive commands.
-- Configurable permissions and logging for safer management.
+- Owner-only access for all admin commands.
+- Configurable log channels via `/setlog`.
 
-**📁 Smart Configuration**
-- All settings stored in JSON files (`config.json` & `setting.json`) for easy customization.
-- Automatically reloads configurations if not found or corrupted.
-
-**📊 Organized Display**
-- Embed-based interface with emojis, color coding, and detailed fields.
-- Pagination system for easy browsing through many subscriptions.
+**📁 Configuration**
+- `config.json` for credentials; `setting.json` for behaviour, names, descriptions, and emoji palette.
+- Per-command enable/disable toggle via `/enable`.
 
 **🕒 Auto Expiry System**
-- Automatic expiry tracking with remaining time calculation.
-- Real-time updates using buttons (Refresh, Next, Previous).
+- Daily midnight cron + configurable interval (default every 12 h).
+- Marks expired subscriptions automatically and notifies owners.
+- Hourly cron for scheduled reminder delivery.
 
-**💬 User-Friendly Interface**
-- Clean design with categorized embeds.
-- Button navigation for effortless control.
+---
 
-<h1 align="center"> ✨ Command List & Features ✨</h1>
+<h1 align="center">✨ Command Reference ✨</h1>
 
-## /subscribe
-- Create a new user subscription.
-- Saves to the database, sends DM to the user, and logs the event.
-- In the free version: limited duration or number of subscriptions.
+### 📋 Subscription Commands
 
-## /unsubscribe
-- Cancel a subscription using a custom_id.
-- Changes status to "cancelled" and sends notifications.
+| Command | Description | Access |
+|---------|-------------|--------|
+| `/subscribe` | Create a new subscription | 🔑 Admin |
+| `/unsubscribe` | Cancel a subscription by custom ID | 🔑 Admin |
+| `/renew` | Renew an existing subscription | 🔑 Admin |
+| `/subscriptions` | Paginated list of all subscriptions with filters | 🔑 Admin |
+| `/info` | View a user's own subscription details | 🌐 Public |
+| `/search` | Search by ID, email, user, plan, or service type | 🔑 Admin |
+| `/edit` | Edit email, password, note, end date, or status | 🔑 Admin |
 
-## /subscriptions
-- Displays all subscriptions with pagination and navigation.
-- Includes real-time refresh and page buttons.
-- In the free version: view only, no control.
+### 🔔 Notification Commands
 
-## /info
-- Displays the user’s current subscription details.
+| Command | Description | Access |
+|---------|-------------|--------|
+| `/check` | Manually run subscription expiry check | 🔑 Admin |
+| `/remind` | Send immediate or scheduled reminder to a user | 🔑 Admin |
+| `/announce` | Broadcast a message to all active subscribers | 🔑 Admin |
 
-## /help
-- Shows a categorized command list with pages and buttons.
+### 📊 Analytics Commands
 
-## /check
-- Manually checks all subscriptions and sends reminders.
-- Premium version: customizable reminder stages.
+| Command | Description | Access |
+|---------|-------------|--------|
+| `/stats` | Full database statistics dashboard | 🔑 Admin |
+| `/chart` | Generate bar, donut, or timeline charts | 🔑 Admin |
 
-## Automatic Check System (cron)
-- Performs daily and automatic subscription verification.
+### ⚙️ Management Commands
 
-## /renew [Premium](https://discord.gg/mFEehCPKEW)
-- Automatically or manually renew a subscription.
+| Command | Description | Access |
+|---------|-------------|--------|
+| `/clearexpired` | Bulk delete all expired subscription records | 🔑 Admin |
+| `/setlog` | Configure log channels | 🔑 Admin |
+| `/enable` | Toggle any command on or off | 🔑 Admin |
+| `/owner_add` | Add a user to the owner list | 🔑 Admin |
+| `/owner_remove` | Remove a user from the owner list | 🔑 Admin |
+| `/plan_add` / `/plan_remove` | Manage available subscription plans | 🔑 Admin |
+| `/type_add` / `/type_remove` | Manage available service types | 🔑 Admin |
+| `/help` | Paginated command reference | 🌐 Public |
+| `/test` | Bot diagnostics (ping, DB, config validation) | 🔑 Admin |
 
-## /stats [Premium](https://discord.gg/mFEehCPKEW)
-- Displays detailed statistics of users and plans.
-
-## /chart [Premium](https://discord.gg/mFEehCPKEW)
-- Shows a chart of subscription growth or decline over time.
-
-## /clearexpired [Premium](https://discord.gg/mFEehCPKEW)
-- Deletes or archives expired subscriptions.
-
-## /announce [Premium](https://discord.gg/mFEehCPKEW)
-- Sends an announcement or message to all subscribers only.
-
-## /remind [Premium](https://discord.gg/mFEehCPKEW)
-- Set custom reminders before expiration days.
-
-## ⚖️ Access Policy: Free vs Premium
-
-| Command (Free)     | Availability | Command (Premium)       | Availability |
-|-------------------|--------------|------------------------|--------------|
-| /subscribe        | Free 🟢      | /renew                 | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /unsubscribe      | Free 🟢      | /stats                 | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /subscriptions    | Free 🟢      | /chart                 | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /info             | Free 🟢      | /announce              | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /help             | Free 🟢      | /remind                | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /plan_add         | Free 🟢      | /check                 | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /plan_remove      | Free 🟢      | /setlog                | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /type_add         | Free 🟢      | /clearexpired          | [Premium](https://discord.gg/mFEehCPKEW) 🔵 |
-| /type_remove      | Free 🟢      |                        |              |
-| /enable           | Free 🟢      |                        |              |
-| /owner_add        | Free 🟢      |                        |              |
-| /owner_remove     | Free 🟢      |                        |              |
-
-
-
+---
 
 ## 📜 License & Copyright
 - © 2025 Code Nexus. All rights reserved.

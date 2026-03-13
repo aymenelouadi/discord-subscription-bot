@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-03-13
+
+### Added
+- **`/search`** — Search subscriptions by `customId` (exact), `userId` (exact), or `email` / `planName` / `serviceType` (regex). Returns up to 20 results with status emoji and expiry timestamp per row.
+- **`/edit`** — Edit `email`, `password`, `note`, `endDate`, or `status` on any existing subscription without deleting it. Logs old→new change diff to the configured log channel. Handles duplicate email (MongoDB code 11000) with a clear error message.
+- **`/test`** — Bot diagnostics command (admin-only, ephemeral): WS ping + response latency, MongoDB connection state / host / DB / document count, `setting.json` and `config.json` validity checks (key presence + counts), Node.js uptime and RSS memory.
+- **`/chart` — Donut chart** (`type: donut`) — new visual style for status breakdown: segmented donut with glow, center total counter, and three legend cards showing count + percentage per status.
+- **`/remind` — Scheduling support** — new `action` option (`send_now` / `schedule` / `both`) and `schedule_days` integer (1–90). Scheduled reminders are stored in a `scheduledReminders[]` array on the subscription document and delivered automatically by cron.
+- **`checkScheduledReminders()`** in `systems/check_sub.js` — runs on a dedicated hourly cron (`0 * * * *`) and alongside every existing `checkAllSubscriptions()` call. Sends CV2 DMs for each due reminder and marks them `sent: true`.
+- **`scheduledReminders` schema field** — added to `systems/shema_user_sub.js`: array of `{ sendAt: Date, message: String, sent: Boolean }`.
+- **`status` enum** — `systems/shema_user_sub.js` `status` field now has `enum: ['active', 'expired', 'cancelled']` for stricter validation.
+
+### Fixed
+- **`d3` ESM crash** — downgraded `d3` from `^7.9.0` to `^6.7.0` (CommonJS). d3 v7 is ESM-only and caused `ERR_REQUIRE_ESM` on every `/chart` invocation in a CJS project.
+- **`setting.json` typo** — `announce` description corrected from `"Send annonce for all subscriptions"` to `"Send announcement to all active subscribers"`.
+
+### Changed
+- `/chart` command now offers **5 chart choices**: status bar, status donut (new), plans bar, services bar, and timeline.
+- `systems/chart_renderer.js` exports `renderDonut` alongside the existing `renderStatus`, `renderBar`, `renderTimeline`.
+
+---
+
 ## [1.1.0] - 2026-03-12
 
 ### Added

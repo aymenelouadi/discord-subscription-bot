@@ -41,7 +41,7 @@
         "announce": {
             "enable": true,
             "name": "announce",
-            "description": "Send annonce for all subscriptions",
+            "description": "Send announcement to all active subscribers",
             "options": "admin"
         },
         "check": {
@@ -174,7 +174,6 @@
         "rocket":       "<:sl_rocket:1481785554483024046>",
         "wrench":       "<:sl_wrench:1481785559084040357>",
         "key":          "<:sl_key:1481785563236405248>",
-        "search":       "<:sl_search:1481785567745413161>",
         "home":         "<:sl_home:1481785571788722298>",
         "mail":         "<:sl_mail:1481785575953666058>",
         "mail_off":     "<:sl_mail_off:1481785580453888176>",
