@@ -6,7 +6,8 @@ Only the latest release of this project receives security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.x   | ✅ Active support  |
+| 1.2.x   | ✅ Active support  |
+| 1.1.x   | ❌ No longer supported |
 | 1.0.x   | ❌ No longer supported |
 
 ---
