@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.96",
-    "d3": "^7.9.0",
+    "d3": "^6.7.0",
     "discord.js": "^14.25.1",
     "fs-extra": "^11.2.0",
     "mongoose": "^8.7.0",
