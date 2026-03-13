@@ -7,18 +7,26 @@ module.exports = {
     execute(client) {
         console.log('🔄 Subscription checker system loaded successfully');
 
-        let config = null;
-        
+        let config   = null;
+        let settings = null;
+
+        const fs   = require('fs');
+        const path = require('path');
+
         const loadConfig = () => {
             try {
-                const fs = require('fs');
-                const path = require('path');
-                const configPath = path.join(__dirname, '..', 'config.json');
-                const configFile = fs.readFileSync(configPath, 'utf8');
-                config = JSON.parse(configFile);
+                config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf8'));
                 console.log('✅ Config loaded successfully');
             } catch (error) {
                 console.error('❌ Failed to load config.json:', error.message);
+            }
+        };
+
+        const loadSettings = () => {
+            try {
+                settings = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'setting.json'), 'utf8'));
+            } catch {
+                settings = { emojie: {} };
             }
         };
 
@@ -73,6 +81,7 @@ module.exports = {
         const checkAllSubscriptions = async () => {
             try {
                 const now = new Date();
+                const em  = settings?.emojie ?? {};
                 console.log(`🔍 Starting subscription check at: ${now.toISOString()}`);
 
                 if (!config) {
@@ -122,7 +131,7 @@ module.exports = {
                                 const expiredContainer = new ContainerBuilder()
                                     .setAccentColor(0xF23F43)
                                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                        `## 🔴 Subscription Expired`
+                                        `## ${em.error ?? ''} Subscription Expired`
                                     ))
                                     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -133,7 +142,7 @@ module.exports = {
                                     ))
                                     .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                                     .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                        `-# 📋 Expiry Log`
+                                        `-# ${em.clipboard ?? ''} Expiry Log`
                                     ));
                                 
                                 await sendOwnerNotification(ownerId, expiredContainer);
@@ -167,7 +176,7 @@ module.exports = {
                             const userContainer = new ContainerBuilder()
                                 .setAccentColor(alertColor)
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                    `## ⏰ Subscription Expiration Alert`
+                                    `## ${em.clock ?? ''} Subscription Expiration Alert`
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -178,7 +187,7 @@ module.exports = {
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                    `-# ❤️ Please renew your subscription before it expires`
+                                    `-# ${em.heart ?? ''} Please renew your subscription before it expires`
                                 ));
 
                             await sendUserNotification(user, userContainer);
@@ -194,8 +203,8 @@ module.exports = {
                                 .setAccentColor(userNotifySuccess ? 0xF0B232 : 0xF23F43)
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
                                     userNotifySuccess
-                                        ? `## ⏰ Stage ${notificationStage} Subscription Alert`
-                                        : `## ⚠️ Notification Failed`
+                                        ? `## ${em.clock ?? ''} Stage ${notificationStage} Subscription Alert`
+                                        : `## ${em.warning ?? ''} Notification Failed`
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -203,11 +212,11 @@ module.exports = {
                                     `**ID** · \`${subscription.customId}\`\n` +
                                     `**Type** · ${subscription.serviceType}  **Plan** · ${subscription.planName}\n` +
                                     `**Expires** · <t:${Math.floor(subscription.endDate.getTime() / 1000)}:D>  (**${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}** remaining)\n` +
-                                    `**Stage** · ${notificationStage} (${stageDays} days)  **Delivery** · ${userNotifySuccess ? '✅ Sent' : '❌ Failed'}`
+                                    `**Stage** · ${notificationStage} (${stageDays} days)  **Delivery** · ${userNotifySuccess ? `${em.success ?? ''} Sent` : `${em.error ?? ''} Failed`}`
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                    `-# 📋 Alert Log`
+                                    `-# ${em.clipboard ?? ''} Alert Log`
                                 ));
 
                             await sendOwnerNotification(ownerId, ownerContainer);
@@ -243,6 +252,7 @@ module.exports = {
         const checkScheduledReminders = async () => {
             try {
                 const now = new Date();
+                const em  = settings?.emojie ?? {};
 
                 const subsWithPending = await client.Subscription.find({
                     scheduledReminders: { $elemMatch: { sent: false, sendAt: { $lte: now } } }
@@ -275,7 +285,7 @@ module.exports = {
                             const dmContainer = new ContainerBuilder()
                                 .setAccentColor(color)
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                    '## 🔔 Scheduled Reminder'
+                                    '## ' + (em.remind ?? '') + ' Scheduled Reminder'
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -283,7 +293,7 @@ module.exports = {
                                 ))
                                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                                    '-# ❤️ Please renew your subscription to continue enjoying the service.'
+                                    '-# ' + (em.heart ?? '') + ' Please renew your subscription to continue enjoying the service.'
                                 ));
 
                             await user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 });
@@ -305,6 +315,7 @@ module.exports = {
 
         const initializeSystem = () => {
             loadConfig();
+            loadSettings();
 
             if (!config) {
                 console.error('❌ Cannot start subscription checker - config not loaded');
