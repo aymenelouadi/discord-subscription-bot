@@ -10,7 +10,7 @@ const {
 } = require('discord.js');
 const fs   = require('fs');
 const path = require('path');
-const { renderStatus, renderBar, renderTimeline } = require('../systems/chart_renderer');
+const { renderStatus, renderBar, renderTimeline, renderDonut } = require('../systems/chart_renderer');
 
 module.exports = {
     data: (() => {
@@ -29,10 +29,11 @@ module.exports = {
                     .setDescription('Chart type to generate')
                     .setRequired(false)
                     .addChoices(
-                        { name: '📊 Status breakdown (active/expired/cancelled)',  value: 'status'   },
+                        { name: '📊 Status breakdown – bar chart',                 value: 'status'   },
+                        { name: '🍩 Status breakdown – donut chart',               value: 'donut'    },
                         { name: '📦 Subscriptions by plan',                        value: 'plans'    },
                         { name: '🔧 Subscriptions by service type',                value: 'services' },
-                        { name: '📅 Timeline – new subscriptions per month',        value: 'timeline' }
+                        { name: '📅 Timeline – new subscriptions per month',       value: 'timeline' }
                     ))
             .addStringOption(opt =>
                 opt.setName('period')
@@ -103,6 +104,16 @@ module.exports = {
             if (chartType === 'status') {
                 chartLabel  = 'Status Breakdown';
                 imageBuffer = renderStatus({
+                    active:    subs.filter(s => s.status === 'active').length,
+                    expired:   subs.filter(s => s.status === 'expired').length,
+                    cancelled: subs.filter(s => s.status === 'cancelled').length,
+                });
+            }
+
+            // ── donut ───────────────────────────────────────────────
+            else if (chartType === 'donut') {
+                chartLabel  = 'Status Breakdown (Donut)';
+                imageBuffer = renderDonut({
                     active:    subs.filter(s => s.status === 'active').length,
                     expired:   subs.filter(s => s.status === 'expired').length,
                     cancelled: subs.filter(s => s.status === 'cancelled').length,

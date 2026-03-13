@@ -332,5 +332,120 @@ function renderTimeline(data, monthCount) {
     return canvas.toBuffer('image/png');
 }
 
-module.exports = { renderStatus, renderBar, renderTimeline };
+// ── Chart: Donut (status breakdown) ──────────────────────────────────────────
+function renderDonut(data) {
+    // data: { active, expired, cancelled }
+    const { canvas, ctx } = initCanvas();
+    drawTitle(ctx, '🍩  Status Breakdown', 'Active · Expired · Cancelled');
+    drawFooter(ctx);
+
+    const items = [
+        { label: 'Active',    value: data.active    ?? 0, color: COLORS.active    },
+        { label: 'Expired',   value: data.expired   ?? 0, color: COLORS.expired   },
+        { label: 'Cancelled', value: data.cancelled ?? 0, color: COLORS.cancelled },
+    ];
+    const total = items.reduce((s, i) => s + i.value, 0);
+
+    // ── Donut geometry ──────────────────────────────────────────────────────
+    const cx     = 295;
+    const cy     = 280;
+    const outerR = 160;
+    const innerR = 88;
+    const gap    = 0.03; // radians gap between segments
+
+    if (total === 0) {
+        // Empty state — single grey ring
+        ctx.strokeStyle = COLORS.border;
+        ctx.lineWidth   = outerR - innerR;
+        ctx.beginPath();
+        ctx.arc(cx, cy, (outerR + innerR) / 2, 0, 2 * Math.PI);
+        ctx.stroke();
+    } else {
+        let startAngle = -Math.PI / 2;
+        items.forEach(item => {
+            if (item.value === 0) return;
+            const angle = (item.value / total) * 2 * Math.PI;
+
+            // Shadow / glow
+            ctx.save();
+            ctx.shadowColor = item.color;
+            ctx.shadowBlur  = 18;
+            ctx.fillStyle   = item.color;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, outerR, startAngle + gap / 2, startAngle + angle - gap / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            startAngle += angle;
+        });
+
+        // Punch hole (donut)
+        ctx.fillStyle = COLORS.bg;
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Inner ring border
+        ctx.strokeStyle = COLORS.border;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    // ── Center text ─────────────────────────────────────────────────────────
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORS.text;
+    ctx.font      = 'bold 38px sans-serif';
+    ctx.fillText(total, cx, cy + 10);
+    ctx.fillStyle = COLORS.textMuted;
+    ctx.font      = '14px sans-serif';
+    ctx.fillText('total', cx, cy + 30);
+    ctx.textAlign = 'left';
+
+    // ── Legend cards (right side) ────────────────────────────────────────────
+    const lx   = 520;
+    const ly   = 130;
+    const boxW = 310;
+    const boxH = 72;
+    const gap2 = 18;
+
+    items.forEach((item, i) => {
+        const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+        const y   = ly + i * (boxH + gap2);
+
+        // Card background
+        ctx.fillStyle = COLORS.bgCard;
+        roundRect(ctx, lx, y, boxW, boxH, 10);
+        ctx.fill();
+
+        // Left accent stripe
+        ctx.fillStyle = item.color;
+        roundRect(ctx, lx, y, 7, boxH, 4);
+        ctx.fill();
+
+        // Label (muted, small)
+        ctx.fillStyle = COLORS.textMuted;
+        ctx.font      = '12px sans-serif';
+        ctx.fillText(item.label.toUpperCase(), lx + 22, y + 22);
+
+        // Count (big, white)
+        ctx.fillStyle = COLORS.text;
+        ctx.font      = 'bold 26px sans-serif';
+        ctx.fillText(item.value, lx + 22, y + 54);
+
+        // Percentage (right-aligned, colored)
+        ctx.fillStyle  = item.color;
+        ctx.font       = 'bold 20px sans-serif';
+        ctx.textAlign  = 'right';
+        ctx.fillText(pct + '%', lx + boxW - 18, y + 54);
+        ctx.textAlign  = 'left';
+    });
+
+    return canvas.toBuffer('image/png');
+}
+
+module.exports = { renderStatus, renderBar, renderTimeline, renderDonut };
 // Code Nexus => https://discord.gg/wBTyCap8
