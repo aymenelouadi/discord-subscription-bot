@@ -329,7 +329,7 @@ const startBot = async () => {
         await client.login(config.DISCORD_TOKEN);
 
         // Set bot activity after ready event
-        client.once('clientReady', () => {
+        client.once('ready', () => {
             console.log(`🤖 Bot is now online as: ${client.user.tag}`);
             client.user.setActivity('Subscriptions', { type: ActivityType.Watching });
         });

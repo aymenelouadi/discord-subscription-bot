@@ -48,8 +48,7 @@ module.exports = {
                 .addChoices(
                     { name: `${settings.emojie.success} Active`, value: 'active' },
                     { name: `${settings?.emojie?.error ?? "❌"} Expired`, value: 'expired' },
-                    { name: `${settings?.emojie?.error ?? "❌"} Cancelled`, value: 'cancelled' },
-                    { name: `${settings.emojie.warning} Paused`, value: 'paused' }
+                    { name: `${settings?.emojie?.error ?? "❌"} Cancelled`, value: 'cancelled' }
                 )
                 .setRequired(false))
         .addStringOption(option =>
@@ -140,9 +139,9 @@ module.exports = {
             const totalPages = Math.ceil(subscriptions.length / itemsPerPage);
             let currentPage = 1;
 
-            const statusEmoji = { active: `${settings.emojie.success}`, expired: `${settings?.emojie?.error ?? "❌"}`, cancelled: `${settings?.emojie?.error ?? "❌"}`, paused: `${settings.emojie.warning}` };
-            const statusLabel = { active: 'Active', expired: 'Expired', cancelled: 'Cancelled', paused: 'Paused' };
-            const accentColor = { active: 0x23C55E, expired: 0xF23F43, cancelled: 0x747F8D, paused: 0xF0B232 };
+            const statusEmoji = { active: `${settings.emojie.success}`, expired: `${settings?.emojie?.error ?? "❌"}`, cancelled: `${settings?.emojie?.error ?? "❌"}` };
+            const statusLabel = { active: 'Active', expired: 'Expired', cancelled: 'Cancelled' };
+            const accentColor = { active: 0x23C55E, expired: 0xF23F43, cancelled: 0x747F8D };
 
             const createPage = (page) => {
                 const start = (page - 1) * itemsPerPage;
@@ -171,6 +170,7 @@ module.exports = {
                     if (isOwner) {
                         line +=
                             `\n> **ID** \`${sub.customId}\`  **Email** ${sub.email}` +
+                            (sub.ip ? `  **IP** \`${sub.ip}\`` : '') +
                             `\n> **Started** <t:${Math.floor(sub.startDate.getTime() / 1000)}:D>` +
                             (sub.note ? `\n> **Note** ${sub.note}` : '');
                     }
@@ -188,12 +188,11 @@ module.exports = {
                     const active = subscriptions.filter(s => s.status === 'active').length;
                     const expired = subscriptions.filter(s => s.status === 'expired').length;
                     const cancelled = subscriptions.filter(s => s.status === 'cancelled').length;
-                    const paused = subscriptions.filter(s => s.status === 'paused').length;
 
                     builder
                         .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                            `**Stats** · ${settings.emojie.success} ${active} active  ${settings?.emojie?.error ?? "❌"} ${expired} expired  ${settings?.emojie?.error ?? "❌"} ${cancelled} cancelled  ${settings.emojie.warning} ${paused} paused`
+                            `**Stats** · ${settings.emojie.success} ${active} active  ${settings?.emojie?.error ?? "❌"} ${expired} expired  ${settings?.emojie?.error ?? "❌"} ${cancelled} cancelled`
                         ));
                 }
 

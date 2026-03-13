@@ -38,7 +38,7 @@ module.exports = {
                 .setRequired(true)
                 .addChoices(
                     ...Object.entries(settings.commands || {}).map(([key, cmd]) => ({
-                        name: `/${cmd.name} - ${cmd.enable ? '${settings.emojie.success} Enabled' : '${settings?.emojie?.error ?? "❌"} Disabled'}`,
+                        name: `/${cmd.name} - ${cmd.enable ? (settings.emojie.success ?? '✅') + ' Enabled' : (settings?.emojie?.error ?? '❌') + ' Disabled'}`,
                         value: cmd.name
                     }))
                 ))
