@@ -1,5 +1,5 @@
 // Code Nexus => https://discord.gg/wBTyCap8
-const { EmbedBuilder } = require('discord.js');
+const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require('discord.js');
 const cron = require('node-cron');
 
 module.exports = {
@@ -43,10 +43,10 @@ module.exports = {
             isProcessingQueue = false;
         };
 
-        const sendUserNotification = async (user, embed) => {
+        const sendUserNotification = async (user, container) => {
             messageQueue.push(async () => {
                 try {
-                    await user.send({ embeds: [embed] });
+                    await user.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
                     return true;
                 } catch (error) {
                     console.error(`❌ Failed to send notification to user ${user.id}:`, error.message);
@@ -56,11 +56,11 @@ module.exports = {
             processMessageQueue();
         };
 
-        const sendOwnerNotification = async (ownerId, embed) => {
+        const sendOwnerNotification = async (ownerId, container) => {
             messageQueue.push(async () => {
                 try {
                     const owner = await client.users.fetch(ownerId);
-                    await owner.send({ embeds: [embed] });
+                    await owner.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
                     return true;
                 } catch (error) {
                     console.error(`❌ Failed to send notification to owner ${ownerId}:`, error.message);
@@ -119,19 +119,24 @@ module.exports = {
                             expiredCount++;
                             
                             for (const ownerId of OWNER) {
-                                const expiredEmbed = new EmbedBuilder()
-                                    .setColor(0xFF0000)
-                                    .setTitle('🔴 Subscription Expired')
-                                    .setFields([
-                                        { name: '👤 User', value: `<@${subscription.userId}> (${subscription.userId})`, inline: true },
-                                        { name: '🆔 Custom ID', value: subscription.customId, inline: true },
-                                        { name: '📋 Type', value: subscription.serviceType, inline: true },
-                                        { name: '📊 Plan', value: subscription.planName, inline: true },
-                                        { name: '📅 End Date', value: `<t:${Math.floor(subscription.endDate.getTime() / 1000)}:F>`, inline: true }
-                                    ])
-                                    .setTimestamp();
+                                const expiredContainer = new ContainerBuilder()
+                                    .setAccentColor(0xF23F43)
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                        `## 🔴 Subscription Expired`
+                                    ))
+                                    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                        `**User** · <@${subscription.userId}> (\`${subscription.userId}\`)\n` +
+                                        `**ID** · \`${subscription.customId}\`\n` +
+                                        `**Type** · ${subscription.serviceType}  **Plan** · ${subscription.planName}\n` +
+                                        `**Expired** · <t:${Math.floor(subscription.endDate.getTime() / 1000)}:D>`
+                                    ))
+                                    .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                                    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                        `-# 📋 Expiry Log`
+                                    ));
                                 
-                                await sendOwnerNotification(ownerId, expiredEmbed);
+                                await sendOwnerNotification(ownerId, expiredContainer);
                             }
                             continue;
                         }
@@ -158,21 +163,25 @@ module.exports = {
                         let userNotifySuccess = false;
                         try {
                             const user = await client.users.fetch(subscription.userId);
-                            const userEmbed = new EmbedBuilder()
-                                .setColor(0xFFA500)
-                                .setTitle('⏰ Subscription Expiration Alert')
-                                .setDescription(`Your subscription will expire in **${daysRemaining} days**`)
-                                .setFields([
-                                    { name: '🆔 Custom ID', value: subscription.customId, inline: true },
-                                    { name: '📋 Service Type', value: subscription.serviceType, inline: true },
-                                    { name: '📊 Plan', value: subscription.planName, inline: true },
-                                    { name: '📅 End Date', value: `<t:${Math.floor(subscription.endDate.getTime() / 1000)}:F>`, inline: true },
-                                    { name: '⏰ Time Remaining', value: `${daysRemaining} days`, inline: true }
-                                ])
-                                .setTimestamp()
-                                .setFooter({ text: 'Please renew your subscription before it expires' });
+                            const alertColor = notificationStage === 3 ? 0xF23F43 : notificationStage === 2 ? 0xF0B232 : 0x5865F2;
+                            const userContainer = new ContainerBuilder()
+                                .setAccentColor(alertColor)
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    `## ⏰ Subscription Expiration Alert`
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    `Your subscription will expire in **${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}**\n\n` +
+                                    `**ID** · \`${subscription.customId}\`\n` +
+                                    `**Type** · ${subscription.serviceType}  **Plan** · ${subscription.planName}\n` +
+                                    `**Expires** · <t:${Math.floor(subscription.endDate.getTime() / 1000)}:D>  (<t:${Math.floor(subscription.endDate.getTime() / 1000)}:R>)`
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    `-# ❤️ Please renew your subscription before it expires`
+                                ));
 
-                            await sendUserNotification(user, userEmbed);
+                            await sendUserNotification(user, userContainer);
                             userNotifySuccess = true;
                             console.log(`✅ Sent stage ${notificationStage} notification to user ${subscription.userId}`);
                         } catch (userError) {
@@ -181,22 +190,27 @@ module.exports = {
                         }
 
                         for (const ownerId of OWNER) {
-                            const ownerEmbed = new EmbedBuilder()
-                                .setColor(userNotifySuccess ? 0xFFA500 : 0xFF0000)
-                                .setTitle(userNotifySuccess ? `⏰ Stage ${notificationStage} Subscription Alert` : '⚠️ Notification Failed')
-                                .setFields([
-                                    { name: '👤 User', value: `<@${subscription.userId}> (${subscription.userId})`, inline: true },
-                                    { name: '🆔 Custom ID', value: subscription.customId, inline: true },
-                                    { name: '📋 Type', value: subscription.serviceType, inline: true },
-                                    { name: '📊 Plan', value: subscription.planName, inline: true },
-                                    { name: '📅 End Date', value: `<t:${Math.floor(subscription.endDate.getTime() / 1000)}:F>`, inline: true },
-                                    { name: '⏰ Time Remaining', value: `${daysRemaining} days`, inline: true },
-                                    { name: '📨 Notification Status', value: userNotifySuccess ? '✅ Sent' : '❌ Failed', inline: true },
-                                    { name: '🔔 Stage', value: `Stage ${notificationStage} (${stageDays} days)`, inline: true }
-                                ])
-                                .setTimestamp();
+                            const ownerContainer = new ContainerBuilder()
+                                .setAccentColor(userNotifySuccess ? 0xF0B232 : 0xF23F43)
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    userNotifySuccess
+                                        ? `## ⏰ Stage ${notificationStage} Subscription Alert`
+                                        : `## ⚠️ Notification Failed`
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    `**User** · <@${subscription.userId}> (\`${subscription.userId}\`)\n` +
+                                    `**ID** · \`${subscription.customId}\`\n` +
+                                    `**Type** · ${subscription.serviceType}  **Plan** · ${subscription.planName}\n` +
+                                    `**Expires** · <t:${Math.floor(subscription.endDate.getTime() / 1000)}:D>  (**${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}** remaining)\n` +
+                                    `**Stage** · ${notificationStage} (${stageDays} days)  **Delivery** · ${userNotifySuccess ? '✅ Sent' : '❌ Failed'}`
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    `-# 📋 Alert Log`
+                                ));
 
-                            await sendOwnerNotification(ownerId, ownerEmbed);
+                            await sendOwnerNotification(ownerId, ownerContainer);
                         }
 
                         subscription.lastNotified = now;
@@ -229,7 +243,6 @@ module.exports = {
         const checkScheduledReminders = async () => {
             try {
                 const now = new Date();
-                const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require('discord.js');
 
                 const subsWithPending = await client.Subscription.find({
                     scheduledReminders: { $elemMatch: { sent: false, sendAt: { $lte: now } } }
