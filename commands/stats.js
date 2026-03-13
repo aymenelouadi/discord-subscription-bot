@@ -47,7 +47,7 @@ module.exports = {
                     new ContainerBuilder()
                         .setAccentColor(0xF23F43)
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                            em.error ?? '❌' + ' This command is currently disabled.'
+                            (em.error ?? '❌') + ' This command is currently disabled.'
                         ))
                 ],
                 flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
@@ -59,7 +59,7 @@ module.exports = {
                     new ContainerBuilder()
                         .setAccentColor(0xF23F43)
                         .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                            em.error ?? '❌' + ' You do not have permission to use this command.'
+                            (em.error ?? '❌') + ' You do not have permission to use this command.'
                         ))
                 ],
                 flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
