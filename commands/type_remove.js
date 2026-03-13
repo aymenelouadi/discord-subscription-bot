@@ -41,6 +41,8 @@ module.exports = {
                 .setMaxLength(50)),
 
     async execute(client, interaction) {
+        const settings = loadFreshSettings();
+
         if (!config.OWNER.includes(interaction.user.id)) {
             return await interaction.reply({
                 components: [
@@ -55,7 +57,6 @@ module.exports = {
         try {
             await interaction.deferReply({ ephemeral: false });
 
-            const settings = loadFreshSettings();
             const typeToRemove = interaction.options.getString('type').trim().toUpperCase();
 
             if (!settings.commands.subscribe) {

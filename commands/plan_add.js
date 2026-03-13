@@ -58,6 +58,7 @@ module.exports = {
                 .setMaxLength(50)),
 
     async execute(client, interaction) {
+        const settings = loadSettings();
         const config = loadConfig();
 
         if (!config.OWNER.includes(interaction.user.id)) {
@@ -146,9 +147,9 @@ module.exports = {
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.plan_add} Plan Added`))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `**New Plan** Â· \`${newPlan}\`\n` +
-                    `**Added By** Â· <@${interaction.user.id}>\n` +
-                    `**Total Plans** Â· ${allPlans.length}/25`
+                    `**New Plan** \u00b7 \`${newPlan}\`\n` +
+                    `**Added By** \u00b7 <@${interaction.user.id}>\n` +
+                    `**Total Plans** \u00b7 ${allPlans.length}/25`
                 ))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -156,7 +157,7 @@ module.exports = {
                 ))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `-# ${settings.emojie.chart} Plans Management Â· Changes take effect immediately`
+                    `-# ${settings.emojie.chart} Plans Management \u00b7 Changes take effect immediately`
                 ));
 
             await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });

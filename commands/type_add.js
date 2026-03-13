@@ -58,6 +58,7 @@ module.exports = {
                 .setMaxLength(50)),
 
     async execute(client, interaction) {
+        const settings = loadSettings();
         const config = loadConfig();
 
         if (!config.OWNER.includes(interaction.user.id)) {
@@ -146,9 +147,9 @@ module.exports = {
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${settings.emojie.type_add} Service Type Added`))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `**New Type** Â· \`${newType}\`\n` +
-                    `**Added By** Â· <@${interaction.user.id}>\n` +
-                    `**Total Types** Â· ${allTypes.length}/25`
+                    `**New Type** \u00b7 \`${newType}\`\n` +
+                    `**Added By** \u00b7 <@${interaction.user.id}>\n` +
+                    `**Total Types** \u00b7 ${allTypes.length}/25`
                 ))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
@@ -156,7 +157,7 @@ module.exports = {
                 ))
                 .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(
-                    `-# ${settings.emojie.wrench} Service Types Â· Changes take effect immediately`
+                    `-# ${settings.emojie.wrench} Service Types \u00b7 Changes take effect immediately`
                 ));
 
             await interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });

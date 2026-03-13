@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { Client, Collection, GatewayIntentBits, REST, Routes, ActivityType } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, REST, Routes, ActivityType, MessageFlags } = require('discord.js');
 const mongoose = require('mongoose');
 
 // ======================
@@ -264,15 +264,19 @@ client.on('interactionCreate', async (interaction) => {
         console.error(error.stack || error);
         
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ 
-                content: '❌ An error occurred while executing the command.', 
-                ephemeral: true 
-            });
+            try {
+                await interaction.followUp({
+                    content: '❌ An error occurred while executing the command.',
+                    flags: MessageFlags.Ephemeral
+                });
+            } catch { /* interaction may have expired */ }
         } else {
-            await interaction.reply({ 
-                content: '❌ An error occurred while executing the command.', 
-                ephemeral: true 
-            });
+            try {
+                await interaction.reply({
+                    content: '❌ An error occurred while executing the command.',
+                    flags: MessageFlags.Ephemeral
+                });
+            } catch { /* interaction may have expired */ }
         }
     }
 });
@@ -325,7 +329,7 @@ const startBot = async () => {
         await client.login(config.DISCORD_TOKEN);
 
         // Set bot activity after ready event
-        client.once('ready', () => {
+        client.once('clientReady', () => {
             console.log(`🤖 Bot is now online as: ${client.user.tag}`);
             client.user.setActivity('Subscriptions', { type: ActivityType.Watching });
         });
