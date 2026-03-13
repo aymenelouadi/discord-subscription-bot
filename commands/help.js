@@ -44,17 +44,26 @@ module.exports = {
                 .setAutocomplete(true)),
 
     async autocomplete(interaction) {
+        // Autocomplete interactions expire in 3 s — if the user types faster
+        // than the round-trip, Discord returns 10062 (Unknown interaction).
+        // This is harmless: just ignore it.
+        if (interaction.responded) return;
+
         const focusedValue = interaction.options.getFocused().toLowerCase();
         const commands = Object.entries(settings.commands)
-            .filter(([name, config]) => config.enable)
-            .map(([name, config]) => ({ name: `/${config.name}`, value: config.name }))
-            .filter(command => 
-                command.name.toLowerCase().includes(focusedValue) || 
+            .filter(([name, cmd]) => cmd.enable)
+            .map(([name, cmd]) => ({ name: `/${cmd.name}`, value: cmd.name }))
+            .filter(command =>
+                command.name.toLowerCase().includes(focusedValue) ||
                 command.value.toLowerCase().includes(focusedValue)
             )
             .slice(0, 25);
 
-        await interaction.respond(commands);
+        try {
+            await interaction.respond(commands);
+        } catch (err) {
+            if (err.code !== 10062) throw err; // re-throw anything unexpected
+        }
     },
 
     async execute(client, interaction) {

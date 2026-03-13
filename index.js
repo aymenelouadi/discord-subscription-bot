@@ -237,7 +237,10 @@ client.on('interactionCreate', async (interaction) => {
         try {
             await command.autocomplete(interaction);
         } catch (error) {
-            console.error(`❌ Error in autocomplete for ${interaction.commandName}:`, error);
+            // 10062 = interaction token expired (user typed faster than round-trip) — not a real error
+            if (error.code !== 10062) {
+                console.error(`❌ Error in autocomplete for ${interaction.commandName}:`, error);
+            }
         }
         return;
     }
