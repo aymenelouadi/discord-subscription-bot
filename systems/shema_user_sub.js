@@ -8,54 +8,25 @@ module.exports = {
         console.log('🔄 Loading user subscription form...');
 
         const subscriptionSchema = new mongoose.Schema({
-            userId: { 
-                type: String, 
-                required: true
-            },
-            customId: { 
-                type: String,
-                required: true,
-                unique: true,
-                trim: true
-            },
-            email: {
-                type: String,
-                required: true,
-                unique: true, 
-                lowercase: true, 
-                trim: true 
-            },
-            password: {
-                type: String,
-                required: true,
-                minlength: 2
-            },
-            planName: { 
-                type: String, 
-                required: true
-            },
-            serviceType: { 
-                type: String, 
-                required: true 
-            },
-            startDate: { 
-                type: Date, 
-                required: true
-            },
-            endDate: { 
-                type: Date, 
-                required: true
-            },
-            status: { 
-                type: String, 
-                required: true
-            },
-            lastNotified: { 
-                type: Date
-            },
-            note: { 
-                type: String
-            }
+            userId:      { type: String, required: true },
+            customId:    { type: String, required: true, unique: true, trim: true },
+            email:       { type: String, required: true, unique: true, lowercase: true, trim: true },
+            password:    { type: String, required: true, minlength: 2 },
+            planName:    { type: String, required: true },
+            serviceType: { type: String, required: true },
+            startDate:   { type: Date,   required: true },
+            endDate:     { type: Date,   required: true },
+            status:      { type: String, required: true, enum: ['active', 'expired', 'cancelled'], default: 'active' },
+            lastNotified:{ type: Date },
+            note:        { type: String },
+            // Scheduled reminders (added via /remind schedule)
+            scheduledReminders: [
+                {
+                    sendAt:  { type: Date,    required: true },
+                    message: { type: String,  default: ''   },
+                    sent:    { type: Boolean, default: false }
+                }
+            ]
         });
 
         const Subscription = mongoose.model('Subscription', subscriptionSchema);

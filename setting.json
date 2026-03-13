@@ -80,6 +80,18 @@
             "description": "View full database statistics",
             "options": "admin"
         },
+        "search": {
+            "enable": true,
+            "name": "search",
+            "description": "Search subscriptions by ID, email, user or plan",
+            "options": "admin"
+        },
+        "edit": {
+            "enable": true,
+            "name": "edit",
+            "description": "Edit an existing subscription",
+            "options": "admin"
+        },
         "enable": {
             "enable": true,
             "name": "enable",
@@ -137,6 +149,8 @@
         "renew":        "<:sl_renew:1481781254440489001>",
         "setlog":       "<:sl_setlog:1481781259754803351>",
         "stats":        "<:sl_stats:1481781264649294036>",
+        "search":       "<:sl_search:1481785567745413161>",
+        "edit":         "<:sl_wrench:1481785559084040357>",
         "enable":       "<:sl_enable:1481781269326074070>",
         "owner_add":    "<:sl_owner_add:1481781274460033034>",
         "owner_remove": "<:sl_owner_remove:1481781279845519381>",

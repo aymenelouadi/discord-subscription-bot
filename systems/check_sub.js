@@ -225,6 +225,71 @@ module.exports = {
             }
         };
 
+        // ── Scheduled reminders (set via /remind schedule) ────────────────────
+        const checkScheduledReminders = async () => {
+            try {
+                const now = new Date();
+                const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require('discord.js');
+
+                const subsWithPending = await client.Subscription.find({
+                    scheduledReminders: { $elemMatch: { sent: false, sendAt: { $lte: now } } }
+                });
+
+                if (subsWithPending.length === 0) return;
+                console.log('🔔 Processing ' + subsWithPending.length + ' scheduled reminder(s)...');
+
+                for (const sub of subsWithPending) {
+                    const dueReminders = (sub.scheduledReminders || []).filter(
+                        r => !r.sent && new Date(r.sendAt) <= now
+                    );
+
+                    for (const reminder of dueReminders) {
+                        try {
+                            const user     = await client.users.fetch(sub.userId);
+                            const daysLeft = Math.ceil((new Date(sub.endDate) - now) / 86400000);
+                            const color    = daysLeft <= 0 ? 0xF23F43 : daysLeft <= 3 ? 0xF0B232 : 0x23C55E;
+                            const endTs    = Math.floor(new Date(sub.endDate).getTime() / 1000);
+
+                            const textLines = [
+                                '**ID** · `' + sub.customId + '`',
+                                '**Type** · ' + sub.serviceType + '  **Plan** · ' + sub.planName,
+                                daysLeft > 0
+                                    ? '**Expires** · <t:' + endTs + ':D>  (<t:' + endTs + ':R>)'
+                                    : '**Status** · Expired  <t:' + endTs + ':R>'
+                            ];
+                            if (reminder.message) textLines.push('\n' + reminder.message);
+
+                            const dmContainer = new ContainerBuilder()
+                                .setAccentColor(color)
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    '## 🔔 Scheduled Reminder'
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    textLines.join('\n')
+                                ))
+                                .addSeparatorComponents(new SeparatorBuilder().setDivider(false))
+                                .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+                                    '-# ❤️ Please renew your subscription to continue enjoying the service.'
+                                ));
+
+                            await user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 });
+                            console.log('✅ Sent scheduled reminder to ' + sub.userId + ' for ' + sub.customId);
+                        } catch (err) {
+                            console.error('❌ Failed to send scheduled reminder for ' + sub.customId + ':', err.message);
+                        }
+                        // Mark sent regardless to avoid infinite retry
+                        reminder.sent = true;
+                    }
+
+                    sub.markModified('scheduledReminders');
+                    await sub.save();
+                }
+            } catch (err) {
+                console.error('❌ Error in checkScheduledReminders:', err);
+            }
+        };
+
         const initializeSystem = () => {
             loadConfig();
 
@@ -238,14 +303,22 @@ module.exports = {
             cron.schedule('0 0 * * *', () => {
                 console.log('🕛 Running scheduled subscription check (midnight)');
                 checkAllSubscriptions();
+                checkScheduledReminders();
+            });
+
+            // Also run scheduled reminders every hour
+            cron.schedule('0 * * * *', () => {
+                checkScheduledReminders();
             });
 
             console.log('🚀 Running initial subscription check');
             checkAllSubscriptions();
+            checkScheduledReminders();
 
             setInterval(() => {
                 console.log(`🔄 Running periodic subscription check (every ${CHECK_HOURS} hours)`);
                 checkAllSubscriptions();
+                checkScheduledReminders();
             }, CHECK_HOURS * 60 * 60 * 1000);
 
             console.log(`⏰ Subscription checker initialized:`);
